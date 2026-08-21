@@ -1,5 +1,5 @@
-use crate::{core::{payload::Payload, runtime::Nya}, ops::{types::NodeCommandResult, utils::{get_control_plane_config, run_on_node}}};
-use crate::ops::{types, utils};
+use crate::{core::{payload::Payload, runtime::Nya}, cloud::{types::NodeCommandResult, utils::{get_control_plane_config, run_on_node}}};
+use crate::cloud::{types, utils};
 use openssh::Session;
 use serde::Serialize;
 use types::BaseNodeConfig;

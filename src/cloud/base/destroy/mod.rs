@@ -1,5 +1,5 @@
-use crate::{core::{payload::{Payload, Take}, runtime::Nya, service::{Service, ServiceActions, handle_action}}, ops::utils::run_on_node};
-use crate::ops::{types, utils};
+use crate::{core::{payload::{Payload, Take}, runtime::Nya, service::{Service, ServiceActions, handle_action}}, cloud::utils::run_on_node};
+use crate::cloud::{types, utils};
 use openssh::Session;
 use serde::Serialize;
 use serde_json::Value;

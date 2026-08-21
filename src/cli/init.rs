@@ -20,7 +20,7 @@ pub fn run(user_input: Option<PathBuf>) {
         }
       }
 
-      if let Err(e) = fs::write(&path, include_str!("../../src/ops/init/initial_config.json")) {
+      if let Err(e) = fs::write(&path, include_str!("../cloud/init/initial_config.json")) {
         println!("Failed to create config file at {}: {}", path.display(), e);
         return;
       }

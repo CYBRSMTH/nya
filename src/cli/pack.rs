@@ -73,8 +73,8 @@ pub fn new(capsule: Option<PathBuf>) {
   };
 
   let pack_values_content = match pack_type {
-    "frontend" => include_str!("../../src/ops/pack/values.frontend.yaml"),
-    "backend" => include_str!("../../src/ops/pack/values.backend.yaml"),
+    "frontend" => include_str!("../cloud/pack/values.frontend.yaml"),
+    "backend" => include_str!("../cloud/pack/values.backend.yaml"),
     _ => { 
       print!("There was an issue with getting the values for your pack. Please try again.");
       return;
@@ -115,7 +115,7 @@ pub fn new(capsule: Option<PathBuf>) {
     return
   }
 
-  if let Err(e) = fs::write(dockerfile_path, include_str!("../../src/ops/pack/Dockerfile")) {
+  if let Err(e) = fs::write(dockerfile_path, include_str!("../cloud/pack/Dockerfile")) {
       println!("Failed to create config file at {}: {}", &pack_path_buf.display(), e);
       return;
   }

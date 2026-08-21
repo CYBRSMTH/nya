@@ -2,7 +2,7 @@ use std::{env, path::PathBuf, process::Stdio};
 use futures::future::join_all;
 use serde::{Deserialize, Serialize};
 use tokio::{io::{AsyncBufReadExt, BufReader}, process::Command};
-use crate::{core::{payload::Payload, runtime::Nya, service::{Service, ServiceActions, handle_action}}, ops::utils::prepare_base_context};
+use crate::{core::{payload::Payload, runtime::Nya, service::{Service, ServiceActions, handle_action}}, cloud::utils::prepare_base_context};
 
 pub struct NyaShip;
 

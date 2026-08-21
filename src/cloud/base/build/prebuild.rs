@@ -1,5 +1,5 @@
-use crate::{core::{checks::{Check, CheckIf}, payload::{Payload, Take}, runtime::Nya}, ops::{types::NodeCommandResult, utils::{get_base_nodes, prepare_base_context, run_on_node}}};
-use crate::ops::{types, utils};
+use crate::{core::{checks::{Check, CheckIf}, payload::{Payload, Take}, runtime::Nya}, cloud::{types::NodeCommandResult, utils::{get_base_nodes, prepare_base_context, run_on_node}}};
+use crate::cloud::{types, utils};
 use openssh::Session;
 use types::BaseNodeConfig;
 use utils::create_ssh_session;
