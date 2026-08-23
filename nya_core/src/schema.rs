@@ -43,7 +43,7 @@ fn get_schema(cmd: &str) -> Result<NyaSchemaSteps, String> {
 
 #[cfg(test)]
 mod schema_tests {
-    use crate::core::schema::NyaSchema;
+    use crate::schema::NyaSchema;
 
     #[test]
     fn can_get_schema() {

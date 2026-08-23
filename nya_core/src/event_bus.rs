@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use std::sync::Arc;
-use crate::core::payload::Payload;
-use crate::core::service::Action;
-use crate::core::runtime::Nya;
+use crate::payload::Payload;
+use crate::service::Action;
+use crate::runtime::Nya;
 
 pub struct NyaEventBus {
   event_handlers: HashMap<String, Action>
@@ -43,14 +43,15 @@ impl EventBus for NyaEventBus {
 mod event_bus_tests{
   use std::path::PathBuf;
   use serde_json::{from_value, Value};
+  use anyhow::{Result};
 
-use crate::{core::
+use crate::{
     {
       event_bus::{EventBus, NyaEventBus}, payload::Payload, service::
         {
           service_tests::TestService, Service
         }
-    }, core::runtime::Nya};
+    }, runtime::Nya};
 
   #[tokio::test]
   async fn can_register_events() {
@@ -61,12 +62,13 @@ use crate::{core::
   }
 
   #[tokio::test]
-  async fn event_bus_can_run_handlers_on_event() {
+  async fn event_bus_can_run_handlers_on_event() -> Result<()> {
+    let configs = vec![PathBuf::from("./tests/nya_test_config.json")];
     let mut event_bus = NyaEventBus::new();
     let svc = Box::new(TestService);
     let handler= svc.register()[0].1.clone();
     let event_name = svc.register()[0].0.clone();
-    let test_nya = Nya::build("test_cmd", PathBuf::from("./tests/nya_test_config.json"), None, vec![Box::new(TestService)]);
+    let test_nya = Nya::build("test_cmd", configs, vec![Box::new(TestService)])?;
     {
       event_bus.on(event_name.clone(), handler);
       event_bus.emit(test_nya.clone(), event_name, Payload::empty()).await;
@@ -75,15 +77,17 @@ use crate::{core::
     let ctx_val = test_nya.get("test_key").await;
     let value: String = from_value(ctx_val.clone()).unwrap();
     assert_eq!(value, "test_value".to_string());
+    Ok(())
   }
 
   #[tokio::test]
-  async fn event_bus_doesnt_run_if_theres_no_event() {
+  async fn event_bus_doesnt_run_if_theres_no_event() -> Result<()> {
+    let configs = vec![PathBuf::from("./tests/nya_test_config.json")];
     let mut event_bus = NyaEventBus::new();
     let svc = Box::new(TestService);
     let handler= svc.register()[0].1.clone();
     let event_name = svc.register()[0].0.clone();
-    let test_nya = Nya::build("test_cmd", PathBuf::from("./tests/nya_test_config.json"), None, vec![Box::new(TestService)]);
+    let test_nya = Nya::build("test_cmd", configs, vec![Box::new(TestService)])?;
     {
       event_bus.on(event_name.clone(), handler);
       event_bus.emit(test_nya.clone(), "fake_event".to_string(), Payload::empty()).await;
@@ -91,6 +95,7 @@ use crate::{core::
     tokio::task::yield_now().await;
     let ctx_val = test_nya.get("test_key").await;
     assert_eq!(Value::Null, ctx_val);
+    Ok(())
   }
 
 }

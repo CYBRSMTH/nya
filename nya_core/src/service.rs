@@ -1,6 +1,6 @@
 use std::sync::Arc;
 use futures::{future::BoxFuture, FutureExt};
-use crate::{core::{payload::Payload, runtime::Nya}};
+use crate::{payload::Payload, runtime::Nya};
 
 pub type Action = Arc<dyn Fn(Nya, Payload) -> BoxFuture<'static, ()> + Send + Sync>;
 pub type ServiceActions = Vec<(String, Action)>;
@@ -20,7 +20,8 @@ pub trait Service: Send + Sync + 'static {
 #[cfg(test)]
 pub mod service_tests{
 
-use crate::{core::{payload::Payload, service::{handle_action, Service, Action, ServiceActions}, runtime::Nya}};
+  use crate::{payload::Payload, service::{handle_action, Service, Action, ServiceActions}, runtime::Nya};
+  use anyhow::{Result};
 
   pub async fn test_fn(nya: Nya, _: Payload) {
     nya.set("test_key", serde_json::Value::String("test_value".to_string())).await;
@@ -42,14 +43,16 @@ use crate::{core::{payload::Payload, service::{handle_action, Service, Action, S
   
 
   #[tokio::test]
-  async fn can_create_action() {
+  async fn can_create_action() -> Result<()> {
     use std::path::PathBuf;
+    let configs = vec![PathBuf::from("./tests/nya_test_config.json")];
     let new_svc_fn: Action = handle_action(test_fn);
-    let test_nya = Nya::build("test_cmd", PathBuf::from("./tests/nya_test_config.json"), None, vec![Box::new(TestService)]);
+    let test_nya = Nya::build("test_cmd", configs, vec![Box::new(TestService)])?;
     new_svc_fn(test_nya.clone(), Payload::empty()).await;
     let value_json = test_nya.get("test_key").await;
     let value = value_json.as_str().unwrap();
     assert_eq!(value, "test_value");
+    Ok(())
   }
 
   #[tokio::test]

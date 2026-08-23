@@ -1,7 +1,7 @@
 use std::{env, path::PathBuf, process::Stdio};
 use tokio::process::Command;
 
-use crate::defaults;
+use crate::cloud::defaults;
 
 pub enum ConfigStatus {
     Exists(PathBuf),

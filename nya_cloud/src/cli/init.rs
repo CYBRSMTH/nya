@@ -1,11 +1,11 @@
 use std::fs;
 use std::path::PathBuf;
-use crate::utils::ConfigStatus;
+use crate::cloud::utils_temp::ConfigStatus;
 use colored::*;
-use crate::utils;
+use crate::cloud::utils_temp;
 
 pub fn run(user_input: Option<PathBuf>) {
-  match utils::verify_base_config(user_input) {
+  match utils_temp::verify_base_config(user_input) {
     ConfigStatus::Exists(path) => {
       println!("{}", "Cannot initialize Base Config, file already exists!".red());
       println!("Location: {}", path.display());
@@ -20,7 +20,7 @@ pub fn run(user_input: Option<PathBuf>) {
         }
       }
 
-      if let Err(e) = fs::write(&path, include_str!("../cloud/init/initial_config.json")) {
+      if let Err(e) = fs::write(&path, include_str!("../init/initial_config.json")) {
         println!("Failed to create config file at {}: {}", path.display(), e);
         return;
       }

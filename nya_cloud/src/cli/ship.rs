@@ -1,8 +1,9 @@
 use std::path::PathBuf;
 use colored::Colorize;
 
-use crate::{core::runtime::Nya, utils::{ConfigStatus}};
-use crate::utils::{verify_base_config, verify_capsule};
+use crate::core::runtime::Nya;
+use crate::cloud::utils_temp::ConfigStatus;
+use crate::cloud::utils_temp::{verify_base_config, verify_capsule};
 
 pub async fn run(config: Option<PathBuf>, capsule: Option<PathBuf>) {
   let config_result = verify_base_config(config);

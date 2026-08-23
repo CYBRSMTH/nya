@@ -3,8 +3,10 @@ use colored::*;
 use inquire::Text;
 use serde::Serialize;
 use serde_json::Value;
-use crate::{cli::pack::Pack, defaults, utils};
-use crate::utils::ConfigStatus;
+use crate::cloud::defaults;
+use crate::cloud::cli::pack::Pack;
+use crate::cloud::utils_temp;
+use crate::cloud::utils_temp::ConfigStatus;
 
 #[derive(Serialize, Debug)]
 pub struct CapsuleData {
@@ -25,7 +27,7 @@ enum CreateNewCapsuleResult {
 }
 
 pub fn new(user_input: Option<PathBuf>) {
-  let file_path = utils::verify_capsule(user_input);
+  let file_path = utils_temp::verify_capsule(user_input);
   match file_path {
     ConfigStatus::Exists(path) => {
       println!("{}", "Cannot create a new Capsule, a nya.json file already exists!".red());
@@ -85,7 +87,7 @@ fn create_new_capsule_file(output_path: PathBuf) -> CreateNewCapsuleResult {
 }
 
 pub fn check(path: Option<PathBuf>){
-  let exists = utils::verify_capsule(path);
+  let exists = utils_temp::verify_capsule(path);
   match exists {
     ConfigStatus::Exists(path) => {
       let current_capsule = read_capsule_file(path);

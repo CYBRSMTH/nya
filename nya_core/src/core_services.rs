@@ -1,18 +1,9 @@
-pub mod runtime;
-pub mod event_bus;
-pub mod schema;
-pub mod context;
-pub mod service;
-pub mod payload;
-mod task_tracker;
-pub mod checks;
+use crate::{payload::{Get, Payload}, service::{Service, ServiceActions, handle_action}, runtime::Nya};
 
-use crate::core::{payload::{Get, Payload}, service::{Service, ServiceActions, handle_action}, runtime::Nya};
+pub struct NyaCoreServices;
 
-pub struct NyaCore;
-
-impl Service for NyaCore {
-  fn name(&self) -> String {"NyaCore".to_string()}
+impl Service for NyaCoreServices {
+  fn name(&self) -> String {"NyaCoreServices".to_string()}
   fn register(&self) -> ServiceActions {
     vec![
       ("test".to_string(), handle_action(test_nya_service)),

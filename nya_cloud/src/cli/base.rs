@@ -1,6 +1,10 @@
+// TODO: The core library no longer cares about the PaaS
+// TODO: so the CLI will now have to provide the capsule and base config paths
+// TODO: by injecting them into the context at runtime.
+
 use std::path::PathBuf;
 use crate::core::runtime::Nya;
-use crate::utils::{verify_base_config, ConfigStatus};
+use crate::cloud::utils_temp::{verify_base_config, ConfigStatus};
 
 pub async fn build(config: Option<PathBuf>) {
   let input_path = verify_base_config(config);
