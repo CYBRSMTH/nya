@@ -1,3 +1,16 @@
 {
-  "test": "context_value"
+  "test": "context_value",
+  "plans": {
+    "test_cmd": {
+      "steps": [
+        "test_event",
+        "test_event2"
+      ]
+    },
+    "test_cmd2": {
+      "steps": [
+        "test"
+      ]
+    }
+  }
 }

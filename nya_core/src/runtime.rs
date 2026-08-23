@@ -3,12 +3,12 @@ use std::sync::Arc;
 use serde::Serialize;
 use serde_json::Value;
 use tokio::{sync::Mutex, task::JoinHandle};
-use crate::{external::get_core_services, context::NyaContext, event_bus::{EventBus, NyaEventBus}, payload::Payload, schema::NyaSchema, service::Service, task_tracker::TaskTracker};
+use crate::{external::get_core_services, context::NyaContext, event_bus::{EventBus, NyaEventBus}, payload::Payload, plan::NyaPlan, service::Service, task_tracker::TaskTracker};
 use anyhow::{Result};
 
 struct NyaInternals {
   context: Arc<Mutex<NyaContext>>,
-  schema: NyaSchema,
+  plan: NyaPlan,
   bus: Arc<NyaEventBus>,
   task_tracker: TaskTracker,
 }
@@ -29,10 +29,10 @@ impl Nya {
   pub fn build(cmd: &str, configs: Vec<PathBuf>, reg: Vec<Box<dyn Service>>) -> Result<Self> {
     let nya_event_bus = build_nya_bus(reg);
     let ctx = NyaContext::new(configs)?;
-    let schema = NyaSchema::new(cmd);
+    let plan = NyaPlan::new(cmd, ctx.clone())?;
     let internals = NyaInternals {
       context: Arc::new(Mutex::new(ctx)),
-      schema,
+      plan,
       bus: Arc::new(nya_event_bus),
       task_tracker: TaskTracker::new(),
     };
@@ -43,7 +43,7 @@ impl Nya {
   }
 
   pub async fn execute(&self, initial_payload: Payload) {
-    for step in self.internals.schema.steps.iter() {
+    for step in self.internals.plan.steps.iter() {
       self.internals.bus.clone().emit(self.clone(), step.clone(), initial_payload.clone()).await;
       self.internals.task_tracker.wait_all().await;
     }

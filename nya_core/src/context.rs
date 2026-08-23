@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use serde_json::{Value, Map};
 use anyhow::{Context, Result};
 
+#[derive(Clone)]
 pub struct NyaContext {
   pub context: HashMap<String, Value>
 }
