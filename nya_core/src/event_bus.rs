@@ -34,7 +34,7 @@ impl EventBus for NyaEventBus {
       let handler_clone = Arc::clone(handler);
       handler_clone(nya_clone, payload).await;
     } else {
-      println!("No handler registered for event: {}", event);
+      println!("No handler registered for event: {}", event); // TODO: should this be a bail?
     }
   }
 }

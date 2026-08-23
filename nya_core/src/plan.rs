@@ -45,8 +45,7 @@ mod schema_tests {
   use std::path::PathBuf;
   use crate::context::NyaContext;
   use crate::plan::NyaPlan;
-  use anyhow::{Context, Result};
-  use clap::Error;
+  use anyhow::Result;
 
   #[test]
     fn can_get_plan() -> Result<()> {
@@ -58,6 +57,7 @@ mod schema_tests {
       assert_eq!(found.steps.len(), steps_len);
       Ok(())
     }
+  
     #[test]
     fn returns_error_for_nonexistent_plan() -> Result<()> {
       let path = PathBuf::from("./tests/nya_test_config.json");
