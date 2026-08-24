@@ -1,6 +1,7 @@
 use openssh::{Session, SessionBuilder};
 use serde_json::Value;
-use crate::{core::runtime::Nya, cloud::types::{BaseNodeConfig, NodeCommandResult}};
+use nya_core::runtime::Nya;
+use crate::{utils::types::{BaseNodeConfig, NodeCommandResult}};
 
 pub async fn get_base_nodes(nya: Nya) -> Vec<BaseNodeConfig> {
   let control_plane_value: Value = nya.get("nya.control_plane").await;

@@ -3,10 +3,10 @@ use colored::*;
 use inquire::Text;
 use serde::Serialize;
 use serde_json::Value;
-use crate::cloud::defaults;
-use crate::cloud::cli::pack::Pack;
-use crate::cloud::utils_temp;
-use crate::cloud::utils_temp::ConfigStatus;
+use crate::utils::defaults;
+use crate::cli::pack::Pack;
+use crate::utils::utils_temp;
+use crate::utils::utils_temp::ConfigStatus;
 
 #[derive(Serialize, Debug)]
 pub struct CapsuleData {

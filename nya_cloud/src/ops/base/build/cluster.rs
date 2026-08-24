@@ -7,15 +7,17 @@ use serde_json::Value;
 use include_dir::{include_dir, Dir};
 use base64::{Engine as _, engine::general_purpose};
 
-use crate::{core::{checks::{Check, CheckIf}, payload::{Payload, Take}, runtime::Nya}, cloud::{types::{BaseNodeConfig, NodeCommandResult, ClusterBind9Context}, utils::{create_ssh_session, get_control_plane_config, get_node_configs, run_on_node}}};
-use crate::cloud::utils::get_from_node;
+use nya_core::{payload::{Payload, Take}, runtime::Nya};
+use crate::utils::{types::{BaseNodeConfig, NodeCommandResult, ClusterBind9Context}, utils::{create_ssh_session, get_control_plane_config, get_node_configs, run_on_node}};
+use crate::utils::utils::get_from_node;
+use crate::utils::checks::{Check, CheckIf};
 
 const K3S_REGISTRIES_TEMPLATE: &str = include_str!("templates/registries.yaml");
 const NAMED_CONF_LOCAL_TEMPLATE: &str = include_str!("templates/named.conf.local");
 const NAMED_CONF_OPTIONS_TEMPLATE: &str = include_str!("templates/named.conf.options");
 const BIND9_DB_TEMPLATE: &str = include_str!("templates/bind9.db");
-const HELM_DIR: Dir = include_dir!("src/cloud/base/build/helm");
-const HELM_TEMPLATES_DIR: Dir = include_dir!("src/cloud/base/build/helm/templates");
+const HELM_DIR: Dir = include_dir!("nya_cloud/src/ops/base/build/helm");
+const HELM_TEMPLATES_DIR: Dir = include_dir!("nya_cloud/src/ops/base/build/helm/templates");
 
 
 #[derive(serde::Serialize, Clone, Debug)]

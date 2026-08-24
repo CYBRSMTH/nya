@@ -3,8 +3,8 @@
 // TODO: by injecting them into the context at runtime.
 
 use std::path::PathBuf;
-use crate::core::runtime::Nya;
-use crate::cloud::utils_temp::{verify_base_config, ConfigStatus};
+use nya_core::runtime::Nya;
+use crate::utils::utils_temp::{verify_base_config, ConfigStatus};
 
 pub async fn build(config: Option<PathBuf>) {
   let input_path = verify_base_config(config);

@@ -5,9 +5,9 @@ use inquire::{Select, Text};
 use serde::Serialize;
 use serde_json::json;
 use tera::{Context, Tera};
-use crate::cloud::utils_temp;
-use crate::cloud::cli::capsule::read_capsule_file;
-use crate::cloud::utils_temp::ConfigStatus;
+use crate::utils::utils_temp;
+use crate::cli::capsule::read_capsule_file;
+use crate::utils::utils_temp::ConfigStatus;
 
 #[derive(Serialize, Debug)]
 pub struct Pack {
@@ -74,8 +74,8 @@ pub fn new(capsule: Option<PathBuf>) {
   };
 
   let pack_values_content = match pack_type {
-    "frontend" => include_str!("../pack/values.frontend.yaml"),
-    "backend" => include_str!("../pack/values.backend.yaml"),
+    "frontend" => include_str!("../ops/pack/values.frontend.yaml"),
+    "backend" => include_str!("../ops/pack/values.backend.yaml"),
     _ => { 
       print!("There was an issue with getting the values for your pack. Please try again.");
       return;
@@ -97,7 +97,7 @@ pub fn new(capsule: Option<PathBuf>) {
   };
   
   let pack_value = serde_json::to_value(&pack).unwrap();
-  let pack_context = Context::from_serialize(pack).unwrap();
+  let pack_context = Context::from_serialize(&pack).unwrap();
   let hydrated_pack_values_content = Tera::one_off(pack_values_content, &pack_context, true);
   
   capsule["capsule"]["packs"].as_array_mut().unwrap().push(pack_value);
@@ -116,7 +116,7 @@ pub fn new(capsule: Option<PathBuf>) {
     return
   }
 
-  if let Err(e) = fs::write(dockerfile_path, include_str!("../pack/Dockerfile")) {
+  if let Err(e) = fs::write(dockerfile_path, include_str!("../ops/pack/Dockerfile")) {
       println!("Failed to create config file at {}: {}", &pack_path_buf.display(), e);
       return;
   }

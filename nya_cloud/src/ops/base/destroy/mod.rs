@@ -1,5 +1,6 @@
-use crate::{core::{payload::{Payload, Take}, runtime::Nya, service::{Service, ServiceActions, handle_action}}, cloud::utils::run_on_node};
-use crate::cloud::{types, utils};
+use nya_core::{payload::{Payload, Take}, runtime::Nya, service::{Service, ServiceActions, handle_action}};
+use crate::utils::utils::run_on_node;
+use crate::utils::{types, utils};
 use openssh::Session;
 use serde::Serialize;
 use serde_json::Value;
@@ -96,7 +97,7 @@ async fn remove_ingress(session: &Session, vars: &Value) {
   let secret_name = vars.get("secret_name").and_then(|v| v.as_str()).unwrap_or("").to_string();
   let rendered = tera::Tera::one_off(
     REMOVE_INGRESS_SCRIPT,
-    &Context::from_serialize(serde_json::to_value(RemoveIngressContext { secret_name }).unwrap()).unwrap(),
+    &Context::from_serialize(&serde_json::to_value(RemoveIngressContext { secret_name }).unwrap()).unwrap(),
     false,
   ).unwrap();
 
@@ -115,7 +116,7 @@ async fn remove_mkcert(session: &Session, vars: &Value) {
   let domain = vars.get("domain_name").and_then(|v| v.as_str()).unwrap_or("").to_string();
   let rendered = tera::Tera::one_off(
     REMOVE_MKCERT_SCRIPT,
-    &Context::from_serialize(serde_json::to_value(RemoveMkcertContext { domain }).unwrap()).unwrap(),
+    &Context::from_serialize(&serde_json::to_value(RemoveMkcertContext { domain }).unwrap()).unwrap(),
     false,
   ).unwrap();
 

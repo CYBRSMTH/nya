@@ -1,8 +1,8 @@
-use crate::core::service::{Service, ServiceActions, handle_action};
-use crate::cloud::base::build::cluster::{complete_cluster, register_node, setup_bind9, setup_helm, setup_tls, on_build_complete, on_finish};
-use crate::cloud::base::build::control_plane::build_control_plane_action;
-use crate::cloud::base::build::ingress::setup_ingress;
-use crate::cloud::base::build::prebuild::{prebuild_action, run_prebuild_script};
+use nya_core::service::{Service, ServiceActions, handle_action};
+use crate::ops::base::build::cluster::{complete_cluster, register_node, setup_bind9, setup_helm, setup_tls, on_build_complete, on_finish};
+use crate::ops::base::build::control_plane::build_control_plane_action;
+use crate::ops::base::build::ingress::setup_ingress;
+use crate::ops::base::build::prebuild::{prebuild_action, run_prebuild_script};
 pub(crate) mod prebuild;
 pub(crate) mod control_plane;
 pub(crate) mod cluster;

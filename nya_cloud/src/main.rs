@@ -1,6 +1,10 @@
-use nya_cloud::cloud::args::{BaseCommands, CapsuleCommands, Cli, Commands, PackCommands};
+mod cli;
+mod ops;
+mod utils;
+
+use crate::cli::args::{BaseCommands, CapsuleCommands, Cli, Commands, PackCommands};
 use clap::Parser;
-use nya_cloud::cloud::cli::{
+use crate::cli::{
   base, capsule, init, pack, ship
 };
 
