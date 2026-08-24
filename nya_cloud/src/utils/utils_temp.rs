@@ -60,13 +60,13 @@ pub fn generate_sha(location: &str) -> String {
         .args(["rev-parse", "--short", "HEAD"])
         .current_dir(location)
         .output();
-        
+
     if let Ok(out) = output {
         if out.status.success() {
             return String::from_utf8_lossy(&out.stdout).trim().to_string();
         }
     }
-    
+
     // Fallback to timestamp-based sha
     use std::time::{SystemTime, UNIX_EPOCH};
     let ts = SystemTime::now()

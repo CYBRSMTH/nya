@@ -2,7 +2,7 @@ use std::{env, path::PathBuf, process::Stdio};
 use futures::future::join_all;
 use serde::{Deserialize, Serialize};
 use tokio::{io::{AsyncBufReadExt, BufReader}, process::Command};
-use nya_core::{payload::Payload, runtime::Nya, service::{Service, ServiceActions, handle_action}}; 
+use nya_core::{payload::Payload, runtime::Nya, service::{Service, ServiceActions, handle_action}};
 use crate::utils::utils::prepare_base_context;
 
 pub struct NyaShip;
@@ -30,7 +30,8 @@ async fn build_packs(nya: Nya, _: Payload) {
   let registry_host = registry_host_value.as_str().unwrap_or("");
   let capsule = nya.get("capsule").await;
   let packs = capsule["packs"].as_array().unwrap();
-  let full_capsule_path = nya.capsule_path().unwrap(); // TODO: capsule will be pulled from the context instead
+  let capsule_path = nya.get("capsule_path").await;
+  let full_capsule_path = capsule_path.as_str().unwrap_or("");
   let mut full_capsule_path_buf = PathBuf::from(full_capsule_path);
   full_capsule_path_buf.pop();
   full_capsule_path_buf.pop();
