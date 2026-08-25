@@ -5,8 +5,7 @@ use serde::Serialize;
 use serde_json::Value;
 use crate::utils::defaults;
 use crate::cli::pack::Pack;
-use crate::utils::utils_temp;
-use crate::utils::utils_temp::ConfigStatus;
+use crate::utils::utils::{ConfigStatus, verify_capsule};
 
 #[derive(Serialize, Debug)]
 pub struct CapsuleData {
@@ -27,7 +26,7 @@ enum CreateNewCapsuleResult {
 }
 
 pub fn new(user_input: Option<PathBuf>) {
-  let file_path = utils_temp::verify_capsule(user_input);
+  let file_path = verify_capsule(user_input);
   match file_path {
     ConfigStatus::Exists(path) => {
       println!("{}", "Cannot create a new Capsule, a nya.json file already exists!".red());
@@ -86,21 +85,21 @@ fn create_new_capsule_file(output_path: PathBuf) -> CreateNewCapsuleResult {
 
 }
 
-// pub fn check(path: Option<PathBuf>) {
-//   let exists = utils_temp::verify_capsule(path);
-//   match exists {
-//     ConfigStatus::Exists(path) => {
-//       let current_capsule = read_capsule_file(path);
-//       println!("{}", "A Capsule file exists in this directory.".green());
-//       if let Some(capsule) = current_capsule {
-//         println!("Capsule name: {}", capsule["capsule"]["name"]);
-//       }
-//     },
-//     ConfigStatus::Missing(_) => {
-//       println!("{}", "No Capsule file found in this directory.".yellow());
-//     }
-//   }
-// }
+pub fn check(path: Option<PathBuf>) {
+  let exists = verify_capsule(path);
+  match exists {
+    ConfigStatus::Exists(path) => {
+      let current_capsule = read_capsule_file(path);
+      println!("{}", "A Capsule file exists in this directory.".green());
+      if let Some(capsule) = current_capsule {
+        println!("Capsule name: {}", capsule["capsule"]["name"]);
+      }
+    },
+    ConfigStatus::Missing(_) => {
+      println!("{}", "No Capsule file found in this directory.".yellow());
+    }
+  }
+}
 
 fn get_capsule_path(path: PathBuf) -> PathBuf {
   if path.display().to_string().contains(".nya/nya.json") {

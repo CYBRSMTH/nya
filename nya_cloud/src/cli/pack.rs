@@ -5,9 +5,8 @@ use inquire::{Select, Text};
 use serde::Serialize;
 use serde_json::json;
 use tera::{Context, Tera};
-use crate::utils::utils_temp;
 use crate::cli::capsule::read_capsule_file;
-use crate::utils::utils_temp::ConfigStatus;
+use crate::utils::utils::{ConfigStatus, verify_capsule};
 
 #[derive(Serialize, Debug)]
 pub struct Pack {
@@ -20,7 +19,7 @@ pub struct Pack {
 }
 
 pub fn new(capsule: Option<PathBuf>) {
-  let capsule_path_buf  = utils_temp::verify_capsule(capsule);
+  let capsule_path_buf = verify_capsule(capsule);
   let capsule_path = match capsule_path_buf {
     ConfigStatus::Exists(path) => path,
     ConfigStatus::Missing(result)=> {

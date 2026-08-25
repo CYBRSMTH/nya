@@ -4,8 +4,8 @@ use anyhow::{Result, bail};
 use serde::{Deserialize, Serialize};
 use nya_core::payload::Payload;
 use nya_core::runtime::Nya;
-use crate::utils::utils_temp::ConfigStatus;
-use crate::utils::utils_temp::{verify_base_config, verify_capsule};
+use crate::utils::utils::ConfigStatus;
+use crate::utils::utils::{verify_base_config, verify_capsule};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct ShipCommandPayload {
@@ -37,7 +37,7 @@ pub async fn run(config: Option<PathBuf>, capsule: Option<PathBuf>) -> Result<()
     base_config_path: base_path_string,
     capsule_path: capsule_path_string,
   };
-  let ship_command_payload_json = serde_json::to_string(&ship_command_payload);
+  let ship_command_payload_json = serde_json::to_string(&ship_command_payload)?;
   
   Nya::run("capsule:ship", vec![nya_base_config_path, nya_capsule_path], Payload::new(ship_command_payload_json)).await?;
   Ok(())

@@ -1,11 +1,10 @@
 use std::fs;
 use std::path::PathBuf;
-use crate::utils::utils_temp::ConfigStatus;
+use crate::utils::utils::{ConfigStatus, verify_base_config};
 use colored::*;
-use crate::utils::utils_temp;
 
 pub fn run(user_input: Option<PathBuf>) {
-  match utils_temp::verify_base_config(user_input) {
+  match verify_base_config(user_input) {
     ConfigStatus::Exists(path) => {
       println!("{}", "Cannot initialize Base Config, file already exists!".red());
       println!("Location: {}", path.display());
