@@ -46,11 +46,12 @@ mod schema_tests {
   use crate::context::NyaContext;
   use crate::plan::NyaPlan;
   use anyhow::Result;
+  use crate::payload::Payload;
 
   #[test]
     fn can_get_plan() -> Result<()> {
       let path = PathBuf::from("./tests/nya_test_config.json");
-      let nya_context = NyaContext::new(vec![path])?;
+      let nya_context = NyaContext::new(vec![path], Payload::empty())?;
 
       let found = NyaPlan::new("test_cmd", nya_context)?;
       let steps_len: usize = 2;
@@ -61,7 +62,7 @@ mod schema_tests {
     #[test]
     fn returns_error_for_nonexistent_plan() -> Result<()> {
       let path = PathBuf::from("./tests/nya_test_config.json");
-      let nya_context = NyaContext::new(vec![path])?;
+      let nya_context = NyaContext::new(vec![path], Payload::empty())?;
       let result = NyaPlan::new("nonexistent", nya_context);
 
       assert!(result.is_err());

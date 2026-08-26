@@ -19,16 +19,16 @@ pub struct Nya {
 }
 
 impl Nya {
-  pub async fn run(cmd: &str, configs: Vec<PathBuf>) -> Result<()> {
+  pub async fn run(cmd: &str, configs: Vec<PathBuf>, initial_payload: Payload) -> Result<()> {
     let services = get_core_services();
-    let nya = Nya::build(cmd, configs, services)?;
+    let nya = Nya::build(cmd, configs, services, initial_payload)?;
     nya.execute(Payload::empty()).await;
     Ok(())
   }
 
-  pub fn build(cmd: &str, configs: Vec<PathBuf>, reg: Vec<Box<dyn Service>>) -> Result<Self> {
+  pub fn build(cmd: &str, configs: Vec<PathBuf>, reg: Vec<Box<dyn Service>>, initial_payload: Payload) -> Result<Self> {
     let nya_event_bus = build_nya_bus(reg);
-    let ctx = NyaContext::new(configs)?;
+    let ctx = NyaContext::new(configs, initial_payload)?;
     let plan = NyaPlan::new(cmd, ctx.clone())?;
     let internals = NyaInternals {
       context: Arc::new(Mutex::new(ctx)),
@@ -101,13 +101,13 @@ mod nya_tests {
   #[test]
   fn can_build_nya() {
     let configs = vec![PathBuf::from("./tests/nya_test_config.json")];
-    let _ = Nya::build("test_cmd", configs,vec![Box::new(TestService)]);
+    let _ = Nya::build("test_cmd", configs,vec![Box::new(TestService)], Payload::empty()).unwrap();
   }
 
   #[tokio::test]
   async fn can_run_nya_schema() -> Result<()> {
     let configs = vec![PathBuf::from("./tests/nya_test_config.json")];
-    let nya = Nya::build("test_cmd2", configs, vec![Box::new(TestService)])?;
+    let nya = Nya::build("test_cmd2", configs, vec![Box::new(TestService)], Payload::empty())?;
     nya.execute(Payload::empty()).await;
     tokio::task::yield_now().await;
     let ctx = nya.internals.context.lock().await;
@@ -119,7 +119,7 @@ mod nya_tests {
 #[tokio::test]
   async fn can_get_value_from_nya() -> Result<()>{
   let configs = vec![PathBuf::from("./tests/nya_test_config.json")];
-    let nya = Nya::build("test_cmd2", configs, vec![Box::new(TestService)])?;
+    let nya = Nya::build("test_cmd2", configs, vec![Box::new(TestService)], Payload::empty())?;
     nya.execute(Payload::empty()).await;
     tokio::task::yield_now().await;
     let nya_val = &nya.get("test_key").await;
@@ -130,7 +130,7 @@ mod nya_tests {
   #[tokio::test]
   async fn can_set_value_on_nya() -> Result<()>{
     let configs = vec![PathBuf::from("./tests/nya_test_config.json")];
-    let nya = Nya::build("test_cmd2", configs, vec![Box::new(TestService)])?;
+    let nya = Nya::build("test_cmd2", configs, vec![Box::new(TestService)], Payload::empty())?;
     let _ = &nya.set("test_key", "test_value").await;
     let nya_val = &nya.get("test_key").await;
     let val1 = nya_val.as_str().unwrap();
@@ -141,7 +141,7 @@ mod nya_tests {
   #[tokio::test]
   async fn can_trigger_nya_event() -> Result<()>{
     let configs = vec![PathBuf::from("./tests/nya_test_config.json")];
-    let nya = Nya::build("test_cmd2", configs, vec![Box::new(TestService)])?;
+    let nya = Nya::build("test_cmd2", configs, vec![Box::new(TestService)], Payload::empty())?;
     {
       nya.trigger("test", Payload::empty()).await;
     }

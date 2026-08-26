@@ -68,7 +68,7 @@ use crate::{
     let svc = Box::new(TestService);
     let handler= svc.register()[0].1.clone();
     let event_name = svc.register()[0].0.clone();
-    let test_nya = Nya::build("test_cmd", configs, vec![Box::new(TestService)])?;
+    let test_nya = Nya::build("test_cmd", configs, vec![Box::new(TestService)], Payload::empty())?;
     {
       event_bus.on(event_name.clone(), handler);
       event_bus.emit(test_nya.clone(), event_name, Payload::empty()).await;
@@ -87,7 +87,7 @@ use crate::{
     let svc = Box::new(TestService);
     let handler= svc.register()[0].1.clone();
     let event_name = svc.register()[0].0.clone();
-    let test_nya = Nya::build("test_cmd", configs, vec![Box::new(TestService)])?;
+    let test_nya = Nya::build("test_cmd", configs, vec![Box::new(TestService)], Payload::empty())?;
     {
       event_bus.on(event_name.clone(), handler);
       event_bus.emit(test_nya.clone(), "fake_event".to_string(), Payload::empty()).await;

@@ -47,7 +47,7 @@ pub mod service_tests{
     use std::path::PathBuf;
     let configs = vec![PathBuf::from("./tests/nya_test_config.json")];
     let new_svc_fn: Action = handle_action(test_fn);
-    let test_nya = Nya::build("test_cmd", configs, vec![Box::new(TestService)])?;
+    let test_nya = Nya::build("test_cmd", configs, vec![Box::new(TestService)], Payload::empty())?;
     new_svc_fn(test_nya.clone(), Payload::empty()).await;
     let value_json = test_nya.get("test_key").await;
     let value = value_json.as_str().unwrap();

@@ -2,6 +2,7 @@ use std::{collections::HashMap, fs::read_to_string};
 use std::path::PathBuf;
 use serde_json::{Value, Map};
 use anyhow::{Context, Result};
+use crate::payload::{Payload, Take};
 
 #[derive(Clone)]
 pub struct NyaContext {
@@ -9,7 +10,7 @@ pub struct NyaContext {
 }
 
 impl NyaContext {
-  pub fn new(configs: Vec<PathBuf>) -> Result<NyaContext> {
+  pub fn new(configs: Vec<PathBuf>, initial_payload: Payload) -> Result<NyaContext> {
     let mut context: Map<String, Value> = Map::new();
 
     for path in configs.iter() {
@@ -26,6 +27,19 @@ impl NyaContext {
       }
     }
 
+    if !initial_payload.is_empty() {
+      let payload_str = initial_payload.take::<String>()?;
+      let payload_val = serde_json::from_str::<Value>(&payload_str)?;
+
+      if let Value::Object(map) = payload_val {
+        for (k, value) in map {
+          context.insert(k, value);
+        }
+      } else if let Value::Array(arr) = payload_val {
+        context.insert("initial_payload".to_string(), Value::Array(arr));
+      }
+    }
+
     Ok(Self {
       context: context.into_iter().collect()
     })
@@ -37,11 +51,12 @@ mod context_tests {
   use std::path::PathBuf;
   use crate::context::NyaContext;
   use anyhow::{Context, Result};
+  use crate::payload::Payload;
 
   #[test]
   fn get_nya_context_returns_context() -> Result<()> {
     let path = PathBuf::from("./tests/nya_test_config.json");
-    let nya_context = NyaContext::new(vec![path])?;
+    let nya_context = NyaContext::new(vec![path], Payload::empty())?;
   
     let test_value = nya_context.context.get("test")
       .and_then(|v| v.as_str())
@@ -56,7 +71,7 @@ mod context_tests {
   fn can_build_nya_context_from_multiple_locations() -> Result<()> {
     let config_path = PathBuf::from("./tests/nya_test_config.json");
     let capsule_path = PathBuf::from("./tests/nya_test_capsule.json");
-    let nya_context = NyaContext::new(vec![config_path, capsule_path])?;
+    let nya_context = NyaContext::new(vec![config_path, capsule_path], Payload::empty())?;
   
     let test_value = nya_context.context.get("test")
       .and_then(|v| v.as_str())

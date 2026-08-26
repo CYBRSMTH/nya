@@ -634,6 +634,7 @@ dependencies = [
  "futures",
  "include_dir",
  "inquire",
+ "nya_core",
  "openssh",
  "regex",
  "serde",
