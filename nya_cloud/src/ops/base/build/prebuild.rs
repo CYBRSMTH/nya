@@ -1,9 +1,11 @@
 use nya_core::{payload::{Payload, Take}, runtime::Nya};
-use crate::utils::{checks::{Check, CheckIf}, types::NodeCommandResult, utils::{get_base_nodes, prepare_base_context, run_on_node}};
-use crate::utils::{types, utils};
+use crate::ops::utils::{get_base_nodes, prepare_base_context, run_on_node};
+use crate::ops::utils;
 use openssh::Session;
-use types::BaseNodeConfig;
+use crate::ops::types::BaseNodeConfig;
 use utils::create_ssh_session;
+use crate::ops::checks::{Check, CheckIf};
+use crate::ops::types::NodeCommandResult;
 
 const INSTALL_DOCKER_SCRIPT: &str = include_str!("scripts/install_docker.sh");
 

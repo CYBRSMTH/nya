@@ -1,10 +1,9 @@
 use std::path::PathBuf;
 use nya_core::{runtime::Nya, payload::Payload};
-use crate::utils::utils::{verify_base_config, ConfigStatus};
+use crate::cli::utils::{verify_base_config, ConfigStatus};
 use anyhow::{Result, bail};
 use serde::{Deserialize, Serialize};
-use utils::defaults::default_plans_location;
-use crate::utils;
+use crate::cli::defaults::default_plans_location;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct BaseCommandPayload {

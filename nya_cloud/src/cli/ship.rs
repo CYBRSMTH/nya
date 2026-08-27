@@ -4,8 +4,8 @@ use anyhow::{Result, bail};
 use serde::{Deserialize, Serialize};
 use nya_core::payload::Payload;
 use nya_core::runtime::Nya;
-use crate::utils::utils::ConfigStatus;
-use crate::utils::utils::{verify_base_config, verify_capsule};
+use crate::cli::utils::ConfigStatus;
+use crate::cli::utils::{verify_base_config, verify_capsule};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct ShipCommandPayload {

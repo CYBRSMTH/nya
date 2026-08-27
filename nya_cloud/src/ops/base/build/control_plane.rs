@@ -1,11 +1,13 @@
 use nya_core::{payload::Payload, runtime::Nya};
-use crate::utils::{checks::{Check, CheckIf}, types::NodeCommandResult, utils::{get_control_plane_config, get_from_node, run_on_node}};
-use crate::utils::{types, utils};
+use crate::ops::utils::{get_control_plane_config, get_from_node, run_on_node};
+use crate::ops::utils;
 use openssh::Session;
 use tera::Context;
-use types::BaseNodeConfig;
+use crate::ops::types::BaseNodeConfig;
 use utils::create_ssh_session;
-use crate::utils::utils::get_node_configs;
+use crate::ops::checks::{Check, CheckIf};
+use crate::ops::types::NodeCommandResult;
+use crate::ops::utils::get_node_configs;
 
 const INSTALL_K3S_SCRIPT: &str = include_str!("scripts/install_k3s.sh");
 const K3S_REGISTRIES_TEMPLATE: &str = include_str!("templates/registries.yaml");

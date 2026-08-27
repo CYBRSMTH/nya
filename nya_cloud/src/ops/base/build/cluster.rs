@@ -5,12 +5,13 @@ use openssh::Session;
 use tera::Context;
 use serde_json::Value;
 use include_dir::{include_dir, Dir};
-use base64::{Engine as _, engine::general_purpose};
+use base64::{engine::general_purpose, Engine as _};
 
 use nya_core::{payload::{Payload, Take}, runtime::Nya};
-use crate::utils::{types::{BaseNodeConfig, NodeCommandResult, ClusterBind9Context}, utils::{create_ssh_session, get_control_plane_config, get_node_configs, run_on_node}};
-use crate::utils::utils::get_from_node;
-use crate::utils::checks::{Check, CheckIf};
+use crate::ops::types::{BaseNodeConfig, ClusterBind9Context, NodeCommandResult};
+use crate::ops::utils::{create_ssh_session, get_control_plane_config, get_node_configs, run_on_node};
+use crate::ops::utils::get_from_node;
+use crate::ops::checks::{Check, CheckIf};
 
 const K3S_REGISTRIES_TEMPLATE: &str = include_str!("templates/registries.yaml");
 const NAMED_CONF_LOCAL_TEMPLATE: &str = include_str!("templates/named.conf.local");

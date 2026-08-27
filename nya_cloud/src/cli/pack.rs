@@ -6,7 +6,7 @@ use serde::Serialize;
 use serde_json::json;
 use tera::{Context, Tera};
 use crate::cli::capsule::read_capsule_file;
-use crate::utils::utils::{ConfigStatus, verify_capsule};
+use crate::cli::utils::{ConfigStatus, verify_capsule};
 
 #[derive(Serialize, Debug)]
 pub struct Pack {

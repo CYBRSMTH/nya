@@ -3,9 +3,9 @@ use colored::*;
 use inquire::Text;
 use serde::Serialize;
 use serde_json::Value;
-use crate::utils::defaults;
+use crate::cli::defaults;
 use crate::cli::pack::Pack;
-use crate::utils::utils::{ConfigStatus, verify_capsule};
+use crate::cli::utils::{ConfigStatus, verify_capsule};
 
 #[derive(Serialize, Debug)]
 pub struct CapsuleData {

@@ -1,12 +1,13 @@
 use nya_core::{payload::Payload, runtime::Nya};
-use crate::utils::{types::NodeCommandResult, utils::{get_control_plane_config, run_on_node}};
-use crate::utils::{types, utils};
+use crate::ops::utils::{get_control_plane_config, run_on_node};
+use crate::ops::utils;
 use openssh::Session;
 use serde::Serialize;
-use types::BaseNodeConfig;
+use crate::ops::types::BaseNodeConfig;
 use utils::create_ssh_session;
 use serde_json::Value;
 use tera::Context;
+use crate::ops::types::NodeCommandResult;
 
 const SETUP_INGRESS_SCRIPT: &str = include_str!("scripts/setup_ingress.sh");
 

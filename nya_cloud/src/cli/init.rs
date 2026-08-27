@@ -1,6 +1,6 @@
 use std::fs;
 use std::path::PathBuf;
-use crate::utils::utils::{ConfigStatus, verify_base_config};
+use crate::cli::utils::{ConfigStatus, verify_base_config};
 use colored::*;
 
 pub fn run(user_input: Option<PathBuf>) {

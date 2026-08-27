@@ -1,6 +1,6 @@
-use nya_core::{payload::{Payload, Take}, runtime::Nya, service::{Service, ServiceActions, handle_action}};
-use crate::utils::utils::run_on_node;
-use crate::utils::{types, utils};
+use nya_core::{payload::{Payload, Take}, runtime::Nya, service::{handle_action, Service, ServiceActions}};
+use crate::ops::utils::run_on_node;
+use crate::ops::utils;
 use openssh::Session;
 use serde::Serialize;
 use serde_json::Value;
@@ -16,8 +16,9 @@ const REMOVE_BIND9_SCRIPT: &str = include_str!("scripts/remove_bind9.sh");
 
 pub struct NyaBaseDestroy;
 
-use types::BaseNodeConfig;
+use crate::ops::types::BaseNodeConfig;
 use utils::create_ssh_session;
+use crate::ops::types;
 
 impl Service for NyaBaseDestroy {
   fn name(&self) -> String {"NyaBase".to_string()}

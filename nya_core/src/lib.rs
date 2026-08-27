@@ -6,6 +6,5 @@ mod plan;
 mod context;
 mod task_tracker;
 mod core_services;
-mod external;
 
 

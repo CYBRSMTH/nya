@@ -3,7 +3,7 @@ use futures::future::join_all;
 use serde::{Deserialize, Serialize};
 use tokio::{io::{AsyncBufReadExt, BufReader}, process::Command};
 use nya_core::{payload::Payload, runtime::Nya, service::{Service, ServiceActions, handle_action}};
-use crate::utils::utils::prepare_base_context;
+use crate::ops::utils::prepare_base_context;
 
 pub struct NyaShip;
 
