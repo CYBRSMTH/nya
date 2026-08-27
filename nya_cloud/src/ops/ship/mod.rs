@@ -89,7 +89,7 @@ async fn build_cmd(file_path: &str, image_name: &str, nya: Nya) {
       let nya = nya.clone();
       async move {
           while let Ok(Some(line)) = out_reader.next_line().await {
-            let _ = nya.trigger("log", Payload::new(line.clone())).await;
+            nya.log(line.clone()).await;
           }
       }
   });
@@ -99,7 +99,7 @@ async fn build_cmd(file_path: &str, image_name: &str, nya: Nya) {
       let nya = nya.clone();
       async move {
           while let Ok(Some(line)) = err_reader.next_line().await {
-              let _ = nya.trigger("log", Payload::new(line.clone())).await;
+            nya.log(line.clone()).await;
           }
       }
   });
@@ -144,7 +144,7 @@ async fn deploy_capsule(nya: Nya, _: Payload) {
 }
 
 async fn push_image(image_name: &str, nya: Nya) {
-    let _ = nya.trigger("log", Payload::new(format!("Pushing {}...", image_name))).await;
+    nya.log(format!("Pushing {}...", image_name)).await;
     
     let mut cmd = Command::new("docker");
     cmd.args(["push", image_name])
@@ -207,7 +207,7 @@ async fn helm_deploy(ctx: &PackContext, nya: Nya) {
         ctx.pack_name
     );
     
-    let _ = nya.trigger("log", Payload::new(format!("Deploying {}...", ctx.pack_name))).await;
+    nya.log(format!("Deploying {}...", ctx.pack_name)).await;
     
     let mut cmd = Command::new("ssh");
     cmd.args([
@@ -242,7 +242,7 @@ async fn run_command(mut cmd: Command, nya: Nya) {
         let nya = nya.clone();
         async move {
             while let Ok(Some(line)) = out_reader.next_line().await {
-                let _ = nya.trigger("log", Payload::new(line)).await;
+                nya.log(line).await;
             }
         }
     });
@@ -251,7 +251,7 @@ async fn run_command(mut cmd: Command, nya: Nya) {
         let nya = nya.clone();
         async move {
             while let Ok(Some(line)) = err_reader.next_line().await {
-                let _ = nya.trigger("log", Payload::new(line)).await;
+                nya.log(line).await;
             }
         }
     });

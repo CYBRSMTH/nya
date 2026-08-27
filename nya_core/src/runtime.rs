@@ -78,6 +78,10 @@ impl Nya {
       self.trigger(event, payload).await;
     }
   }
+
+  pub async fn log(&self, log: String) {
+    println!("{}", log);
+  }
 }
 
 fn build_nya_bus(reg: Vec<Box<dyn Service>>) -> NyaEventBus {
