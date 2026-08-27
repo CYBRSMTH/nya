@@ -4,6 +4,7 @@ use crate::cli::utils::{verify_base_config, ConfigStatus};
 use anyhow::{Result, bail};
 use serde::{Deserialize, Serialize};
 use crate::cli::defaults::default_plans_location;
+use crate::ops::get_cloud_services;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct BaseCommandPayload {
@@ -21,7 +22,8 @@ pub async fn build(config: Option<PathBuf>) -> Result<()> {
   let plans_path = default_plans_location();
   let base_command_payload = get_base_command_payload(path.clone())?;
   let payload = Payload::new(base_command_payload);
-  Nya::run("base:build", vec![path, plans_path], payload).await?;
+  let cloud_services = get_cloud_services();
+  Nya::run("base:build", vec![path, plans_path], payload, cloud_services).await?;
   Ok(())
 }
 
@@ -36,7 +38,8 @@ pub async fn destroy(config: Option<PathBuf>) -> Result<()> {
   let plans_path = default_plans_location();
   let base_command_payload = get_base_command_payload(path.clone())?;
   let payload = Payload::new(base_command_payload);
-  Nya::run("base:destroy", vec![path, plans_path], payload).await?;
+  let cloud_services = get_cloud_services();
+  Nya::run("base:destroy", vec![path, plans_path], payload, cloud_services).await?;
   Ok(())
 }
 

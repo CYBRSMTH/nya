@@ -6,6 +6,7 @@ use nya_core::payload::Payload;
 use nya_core::runtime::Nya;
 use crate::cli::utils::ConfigStatus;
 use crate::cli::utils::{verify_base_config, verify_capsule};
+use crate::ops::get_cloud_services;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct ShipCommandPayload {
@@ -38,7 +39,7 @@ pub async fn run(config: Option<PathBuf>, capsule: Option<PathBuf>) -> Result<()
     capsule_path: capsule_path_string,
   };
   let ship_command_payload_json = serde_json::to_string(&ship_command_payload)?;
-  
-  Nya::run("capsule:ship", vec![nya_base_config_path, nya_capsule_path], Payload::new(ship_command_payload_json)).await?;
+  let cloud_services = get_cloud_services();
+  Nya::run("capsule:ship", vec![nya_base_config_path, nya_capsule_path], Payload::new(ship_command_payload_json), cloud_services).await?;
   Ok(())
 }
