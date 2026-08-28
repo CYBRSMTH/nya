@@ -4,6 +4,7 @@ use anyhow::{Result, bail};
 use serde::{Deserialize, Serialize};
 use nya_core::payload::Payload;
 use nya_core::runtime::Nya;
+use crate::cli::defaults::default_plans_location;
 use crate::cli::utils::ConfigStatus;
 use crate::cli::utils::{verify_base_config, verify_capsule};
 use crate::ops::get_cloud_services;
@@ -30,16 +31,17 @@ pub async fn run(config: Option<PathBuf>, capsule: Option<PathBuf>) -> Result<()
       bail!("{}{}", "No capsule was found at ".red(), result.0.display().to_string().red());
     }
   };
-  
+
   let base_path_string = nya_base_config_path.to_str().unwrap().to_string();
   let capsule_path_string = nya_capsule_path.to_str().unwrap().to_string();
-  
+  let plans_path = default_plans_location();
+
   let ship_command_payload = ShipCommandPayload {
     base_config_path: base_path_string,
     capsule_path: capsule_path_string,
   };
   let ship_command_payload_json = serde_json::to_string(&ship_command_payload)?;
   let cloud_services = get_cloud_services();
-  Nya::run("capsule:ship", vec![nya_base_config_path, nya_capsule_path], Payload::new(ship_command_payload_json), cloud_services).await?;
+  Nya::run("capsule:ship", vec![nya_base_config_path, nya_capsule_path, plans_path], Payload::new(ship_command_payload_json), cloud_services).await?;
   Ok(())
 }

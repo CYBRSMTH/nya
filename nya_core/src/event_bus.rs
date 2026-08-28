@@ -41,9 +41,10 @@ impl EventBus for NyaEventBus {
 
 #[cfg(test)]
 mod event_bus_tests{
+  use std::fs::read_to_string;
   use std::path::PathBuf;
   use serde_json::{from_value, Value};
-  use anyhow::{Result};
+  use anyhow::{Context, Result};
 
 use crate::{
     {
@@ -63,7 +64,13 @@ use crate::{
 
   #[tokio::test]
   async fn event_bus_can_run_handlers_on_event() -> Result<()> {
-    let configs = vec![PathBuf::from("./tests/nya_test_config.json")];
+    let path = PathBuf::from("./tests/nya_test_config.json");
+    let content = read_to_string(&path)
+        .context(format!("Failed to read context file '{}'", path.display()))?;
+
+    let json: Value = serde_json::from_str(&content)
+        .context(format!("Failed to parse {}", path.display()))?;
+    let configs = vec![json];
     let mut event_bus = NyaEventBus::new();
     let svc = Box::new(TestService);
     let handler= svc.register()[0].1.clone();
@@ -82,7 +89,13 @@ use crate::{
 
   #[tokio::test]
   async fn event_bus_doesnt_run_if_theres_no_event() -> Result<()> {
-    let configs = vec![PathBuf::from("./tests/nya_test_config.json")];
+    let path = PathBuf::from("./tests/nya_test_config.json");
+    let content = read_to_string(&path)
+        .context(format!("Failed to read context file '{}'", path.display()))?;
+
+    let json: Value = serde_json::from_str(&content)
+        .context(format!("Failed to parse {}", path.display()))?;
+    let configs = vec![json];
     let mut event_bus = NyaEventBus::new();
     let svc = Box::new(TestService);
     let handler= svc.register()[0].1.clone();

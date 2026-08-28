@@ -7,7 +7,7 @@ license = "Apache-2.0"
 description = "Self-hosted PaaS for deploying apps to your own servers"
 repository = "https://github.com/NyaOps/nya"
 keywords = ["paas", "kubernetes", "self-hosted", "deployment", "homelab"]
-categories = ["command-line-utilities", "development-tools"]
+categories = ["command-line-utilities", "development-tools", "dev-ops", "cloud", "platform"]
 
 [[bin]]
 name = "nya"
@@ -16,7 +16,6 @@ path = "src/main.rs"
 [dependencies]
 nya_core = { path = "../nya_core" }
 anyhow = "1.0.100"
-async-trait = "0.1.88"
 base64 = "0.23.1"
 chrono = { version = "0.4.43", features = ["serde"] }
 dirs = "6.0.0"
@@ -26,11 +25,8 @@ futures = "0.3.31"
 include_dir = "0.7.4"
 inquire = "0.9.2"
 openssh = "0.11.6"
-regex = "1.12.2"
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = { version = "1.0.142", features = ["preserve_order"] }
 shellexpand = "3.1.1"
-tempfile = "3.24.0"
 tera = "2.2.0"
 tokio = { version = "1.47.1", features = ["macros", "rt-multi-thread", "time", "sync", "process", "io-util"] }
-uuid = { version = "1.17.0", features = ["v4", "serde"] }

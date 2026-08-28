@@ -42,16 +42,23 @@ fn get_plan(cmd: &str, ctx: NyaContext) -> Result<NyaPlanSteps> {
 
 #[cfg(test)]
 mod schema_tests {
+  use std::fs::read_to_string;
   use std::path::PathBuf;
   use crate::context::NyaContext;
   use crate::plan::NyaPlan;
-  use anyhow::Result;
+  use anyhow::{Context, Result};
+  use serde_json::Value;
   use crate::payload::Payload;
 
   #[test]
     fn can_get_plan() -> Result<()> {
-      let path = PathBuf::from("./tests/nya_test_config.json");
-      let nya_context = NyaContext::new(vec![path], Payload::empty())?;
+    let path = PathBuf::from("./tests/nya_test_config.json");
+    let content = read_to_string(&path)
+        .context(format!("Failed to read context file '{}'", path.display()))?;
+
+    let json: Value = serde_json::from_str(&content)
+        .context(format!("Failed to parse {}", path.display()))?;
+      let nya_context = NyaContext::new(vec![json], Payload::empty())?;
 
       let found = NyaPlan::new("test_cmd", nya_context)?;
       let steps_len: usize = 2;
@@ -62,7 +69,12 @@ mod schema_tests {
     #[test]
     fn returns_error_for_nonexistent_plan() -> Result<()> {
       let path = PathBuf::from("./tests/nya_test_config.json");
-      let nya_context = NyaContext::new(vec![path], Payload::empty())?;
+      let content = read_to_string(&path)
+          .context(format!("Failed to read context file '{}'", path.display()))?;
+
+      let json: Value = serde_json::from_str(&content)
+          .context(format!("Failed to parse {}", path.display()))?;
+      let nya_context = NyaContext::new(vec![json], Payload::empty())?;
       let result = NyaPlan::new("nonexistent", nya_context);
 
       assert!(result.is_err());

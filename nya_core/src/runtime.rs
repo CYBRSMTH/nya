@@ -20,13 +20,13 @@ pub struct Nya {
 }
 
 impl Nya {
-  pub async fn run(cmd: &str, configs: Vec<PathBuf>, initial_payload: Payload, services: Vec<Box<dyn Service>>) -> Result<()> {
+  pub async fn run(cmd: &str, configs: Vec<Value>, initial_payload: Payload, services: Vec<Box<dyn Service>>) -> Result<()> {
     let nya = Nya::build(cmd, configs, services, initial_payload)?;
     nya.execute().await;
     Ok(())
   }
 
-  pub fn build(cmd: &str, configs: Vec<PathBuf>, reg: Vec<Box<dyn Service>>, initial_payload: Payload) -> Result<Self> {
+  pub fn build(cmd: &str, configs: Vec<Value>, reg: Vec<Box<dyn Service>>, initial_payload: Payload) -> Result<Self> {
     let nya_event_bus = build_nya_bus(reg);
     let ctx = NyaContext::new(configs, initial_payload)?;
     let plan = NyaPlan::new(cmd, ctx.clone())?;
@@ -98,19 +98,34 @@ fn build_nya_bus(reg: Vec<Box<dyn Service>>) -> NyaEventBus {
 
 #[cfg(test)]
 mod nya_tests {
+  use std::fs::read_to_string;
   use std::path::PathBuf;
   use crate::{payload::Payload, service::service_tests::TestService, runtime::Nya};
-  use anyhow::{Result};
+  use anyhow::{Context, Result};
+  use serde_json::Value;
 
   #[test]
-  fn can_build_nya() {
-    let configs = vec![PathBuf::from("./tests/nya_test_config.json")];
+  fn can_build_nya() -> Result<()> {
+    let path = PathBuf::from("./tests/nya_test_config.json");
+    let content = read_to_string(&path)
+        .context(format!("Failed to read context file '{}'", path.display()))?;
+
+    let json: Value = serde_json::from_str(&content)
+        .context(format!("Failed to parse {}", path.display()))?;
+    let configs = vec![json];
     let _ = Nya::build("test_cmd", configs,vec![Box::new(TestService)], Payload::empty()).unwrap();
+    Ok(())
   }
 
   #[tokio::test]
   async fn can_run_nya_schema() -> Result<()> {
-    let configs = vec![PathBuf::from("./tests/nya_test_config.json")];
+    let path = PathBuf::from("./tests/nya_test_config.json");
+    let content = read_to_string(&path)
+        .context(format!("Failed to read context file '{}'", path.display()))?;
+
+    let json: Value = serde_json::from_str(&content)
+        .context(format!("Failed to parse {}", path.display()))?;
+    let configs = vec![json];
     let nya = Nya::build("test_cmd2", configs, vec![Box::new(TestService)], Payload::empty())?;
     nya.execute().await;
     tokio::task::yield_now().await;
@@ -122,7 +137,13 @@ mod nya_tests {
 
 #[tokio::test]
   async fn can_get_value_from_nya() -> Result<()>{
-  let configs = vec![PathBuf::from("./tests/nya_test_config.json")];
+  let path = PathBuf::from("./tests/nya_test_config.json");
+  let content = read_to_string(&path)
+      .context(format!("Failed to read context file '{}'", path.display()))?;
+
+  let json: Value = serde_json::from_str(&content)
+      .context(format!("Failed to parse {}", path.display()))?;
+  let configs = vec![json];
     let nya = Nya::build("test_cmd2", configs, vec![Box::new(TestService)], Payload::empty())?;
     nya.execute().await;
     tokio::task::yield_now().await;
@@ -133,7 +154,13 @@ mod nya_tests {
 
   #[tokio::test]
   async fn can_set_value_on_nya() -> Result<()>{
-    let configs = vec![PathBuf::from("./tests/nya_test_config.json")];
+    let path = PathBuf::from("./tests/nya_test_config.json");
+    let content = read_to_string(&path)
+        .context(format!("Failed to read context file '{}'", path.display()))?;
+
+    let json: Value = serde_json::from_str(&content)
+        .context(format!("Failed to parse {}", path.display()))?;
+    let configs = vec![json];
     let nya = Nya::build("test_cmd2", configs, vec![Box::new(TestService)], Payload::empty())?;
     let _ = &nya.set("test_key", "test_value").await;
     let nya_val = &nya.get("test_key").await;
@@ -144,7 +171,13 @@ mod nya_tests {
 
   #[tokio::test]
   async fn can_trigger_nya_event() -> Result<()>{
-    let configs = vec![PathBuf::from("./tests/nya_test_config.json")];
+    let path = PathBuf::from("./tests/nya_test_config.json");
+    let content = read_to_string(&path)
+        .context(format!("Failed to read context file '{}'", path.display()))?;
+
+    let json: Value = serde_json::from_str(&content)
+        .context(format!("Failed to parse {}", path.display()))?;
+    let configs = vec![json];
     let nya = Nya::build("test_cmd2", configs, vec![Box::new(TestService)], Payload::empty())?;
     {
       nya.trigger("test", Payload::empty()).await;

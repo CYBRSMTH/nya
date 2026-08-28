@@ -17,8 +17,8 @@ const K3S_REGISTRIES_TEMPLATE: &str = include_str!("templates/registries.yaml");
 const NAMED_CONF_LOCAL_TEMPLATE: &str = include_str!("templates/named.conf.local");
 const NAMED_CONF_OPTIONS_TEMPLATE: &str = include_str!("templates/named.conf.options");
 const BIND9_DB_TEMPLATE: &str = include_str!("templates/bind9.db");
-const HELM_DIR: Dir = include_dir!("nya_cloud/src/ops/base/build/helm");
-const HELM_TEMPLATES_DIR: Dir = include_dir!("nya_cloud/src/ops/base/build/helm/templates");
+const HELM_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/src/ops/base/build/helm");
+const HELM_TEMPLATES_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/src/ops/base/build/helm/templates");
 
 
 #[derive(serde::Serialize, Clone, Debug)]
