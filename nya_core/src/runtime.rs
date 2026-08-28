@@ -1,11 +1,9 @@
-use std::path::PathBuf;
 use std::sync::Arc;
 use serde::Serialize;
 use serde_json::Value;
 use tokio::{sync::Mutex, task::JoinHandle};
 use crate::{context::NyaContext, event_bus::{EventBus, NyaEventBus}, payload::Payload, plan::NyaPlan, service::Service, task_tracker::TaskTracker};
 use anyhow::{Result};
-use crate::service::ServiceActions;
 
 struct NyaInternals {
   context: Arc<Mutex<NyaContext>>,

@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 use nya_core::{runtime::Nya, payload::Payload};
-use crate::cli::utils::{verify_base_config, ConfigStatus};
+use crate::cli::utils::{get_json_from_paths, verify_base_config, ConfigStatus};
 use anyhow::{Result, bail};
 use serde::{Deserialize, Serialize};
 use crate::cli::defaults::default_plans_location;
@@ -23,7 +23,8 @@ pub async fn build(config: Option<PathBuf>) -> Result<()> {
   let base_command_payload = get_base_command_payload(path.clone())?;
   let payload = Payload::new(base_command_payload);
   let cloud_services = get_cloud_services();
-  Nya::run("base:build", vec![path, plans_path], payload, cloud_services).await?;
+  let context_values = get_json_from_paths(vec![path, plans_path])?;
+  Nya::run("base:build", context_values, payload, cloud_services).await?;
   Ok(())
 }
 
@@ -39,7 +40,8 @@ pub async fn destroy(config: Option<PathBuf>) -> Result<()> {
   let base_command_payload = get_base_command_payload(path.clone())?;
   let payload = Payload::new(base_command_payload);
   let cloud_services = get_cloud_services();
-  Nya::run("base:destroy", vec![path, plans_path], payload, cloud_services).await?;
+  let context_values = get_json_from_paths(vec![path, plans_path])?;
+  Nya::run("base:destroy", context_values, payload, cloud_services).await?;
   Ok(())
 }
 

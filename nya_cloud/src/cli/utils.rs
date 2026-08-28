@@ -1,6 +1,9 @@
 use std::env;
+use std::fs::read_to_string;
 use std::path::PathBuf;
 use crate::cli::defaults;
+use anyhow::{Context, Result};
+use serde_json::Value;
 
 pub enum ConfigStatus {
   Exists(PathBuf),
@@ -50,4 +53,17 @@ pub fn verify_capsule(user_input: Option<PathBuf>) -> ConfigStatus {
   }
 
   ConfigStatus::Exists(full_path)
+}
+
+pub fn get_json_from_paths(paths: Vec<PathBuf>) -> Result<Vec<Value>> {
+  let mut config_jsons = Vec::<Value>::new();
+  
+  for path in paths {
+    let config_content = read_to_string(&path)
+        .context(format!("Failed to read context file '{}'", path.display()))?;
+    let config_json: Value = serde_json::from_str(&config_content)
+        .context(format!("Failed to parse {}", path.display()))?;
+    config_jsons.push(config_json);
+  };
+  Ok(config_jsons)
 }
