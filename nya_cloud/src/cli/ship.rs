@@ -4,7 +4,7 @@ use anyhow::{Result, bail};
 use serde::{Deserialize, Serialize};
 use nya_core::payload::Payload;
 use nya_core::runtime::Nya;
-use crate::cli::defaults::default_plans_location;
+use crate::cli::defaults::get_cloud_plans;
 use crate::cli::utils::{get_json_from_paths, ConfigStatus};
 use crate::cli::utils::{verify_base_config, verify_capsule};
 use crate::ops::get_cloud_services;
@@ -34,7 +34,6 @@ pub async fn run(config: Option<PathBuf>, capsule: Option<PathBuf>) -> Result<()
 
   let base_path_string = nya_base_config_path.to_str().unwrap().to_string();
   let capsule_path_string = nya_capsule_path.to_str().unwrap().to_string();
-  let plans_path = default_plans_location();
 
   let ship_command_payload = ShipCommandPayload {
     base_config_path: base_path_string,
@@ -42,7 +41,8 @@ pub async fn run(config: Option<PathBuf>, capsule: Option<PathBuf>) -> Result<()
   };
   let ship_command_payload_json = serde_json::to_string(&ship_command_payload)?;
   let cloud_services = get_cloud_services();
-  let context_values = get_json_from_paths(vec![nya_base_config_path, nya_capsule_path, plans_path])?;
+  let mut context_values = get_json_from_paths(vec![nya_base_config_path, nya_capsule_path])?;
+  context_values.push(get_cloud_plans());
   Nya::run("capsule:ship", context_values, Payload::new(ship_command_payload_json), cloud_services).await?;
   Ok(())
 }

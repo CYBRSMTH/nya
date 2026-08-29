@@ -3,7 +3,7 @@ use nya_core::{runtime::Nya, payload::Payload};
 use crate::cli::utils::{get_json_from_paths, verify_base_config, ConfigStatus};
 use anyhow::{Result, bail};
 use serde::{Deserialize, Serialize};
-use crate::cli::defaults::default_plans_location;
+use crate::cli::defaults::get_cloud_plans;
 use crate::ops::get_cloud_services;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -19,11 +19,11 @@ pub async fn build(config: Option<PathBuf>) -> Result<()> {
       bail!("No config found at {}. Please create a config file to proceed.", result.0.display());
     },
   };
-  let plans_path = default_plans_location();
   let base_command_payload = get_base_command_payload(path.clone())?;
   let payload = Payload::new(base_command_payload);
   let cloud_services = get_cloud_services();
-  let context_values = get_json_from_paths(vec![path, plans_path])?;
+  let mut context_values = get_json_from_paths(vec![path])?;
+  context_values.push(get_cloud_plans());
   Nya::run("base:build", context_values, payload, cloud_services).await?;
   Ok(())
 }
@@ -36,11 +36,11 @@ pub async fn destroy(config: Option<PathBuf>) -> Result<()> {
       bail!("No config found at {}. Please create a config file to proceed.", result.0.display());
     }
   };
-  let plans_path = default_plans_location();
   let base_command_payload = get_base_command_payload(path.clone())?;
   let payload = Payload::new(base_command_payload);
   let cloud_services = get_cloud_services();
-  let context_values = get_json_from_paths(vec![path, plans_path])?;
+  let mut context_values = get_json_from_paths(vec![path])?;
+  context_values.push(get_cloud_plans());
   Nya::run("base:destroy", context_values, payload, cloud_services).await?;
   Ok(())
 }

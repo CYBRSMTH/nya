@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 use std::sync::Arc;
+use anyhow::bail;
 use crate::payload::Payload;
 use crate::service::Action;
 use crate::runtime::Nya;
-
+use anyhow::Result;
 pub struct NyaEventBus {
   event_handlers: HashMap<String, Action>
 }
@@ -19,7 +20,7 @@ impl NyaEventBus {
 #[async_trait::async_trait]
 pub trait EventBus: Send + Sync + 'static {
   fn on(&mut self, event: String, handler: Action);
-  async fn emit(&self, nya: Nya, event: String, payload: Payload);
+  async fn emit(&self, nya: Nya, event: String, payload: Payload) -> Result<()>;
 }
 
 #[async_trait::async_trait]
@@ -28,13 +29,14 @@ impl EventBus for NyaEventBus {
     self.event_handlers.insert(event, handler);
   }
   
-  async fn emit(&self, nya: Nya, event: String, payload: Payload) {
+  async fn emit(&self, nya: Nya, event: String, payload: Payload) -> Result<()> {
     if let Some(handler) = self.event_handlers.get(&event) {
       let nya_clone: Nya = nya.clone();
       let handler_clone = Arc::clone(handler);
       handler_clone(nya_clone, payload).await;
+      Ok(())
     } else {
-      println!("No handler registered for event: {}", event); // TODO: should this be a bail?
+      bail!("No handler registered for event: {}", event); // TODO: Write a test for this
     }
   }
 }
