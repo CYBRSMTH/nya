@@ -43,6 +43,6 @@ pub async fn run(config: Option<PathBuf>, capsule: Option<PathBuf>) -> Result<()
   let cloud_services = get_cloud_services();
   let mut context_values = get_json_from_paths(vec![nya_base_config_path, nya_capsule_path])?;
   context_values.push(get_cloud_plans());
-  Nya::run("capsule:ship", context_values, Payload::new(ship_command_payload_json), cloud_services).await?;
+  Nya::run("capsule:ship", context_values, cloud_services, Payload::new(ship_command_payload_json)).await?;
   Ok(())
 }

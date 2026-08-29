@@ -24,7 +24,7 @@ pub async fn build(config: Option<PathBuf>) -> Result<()> {
   let cloud_services = get_cloud_services();
   let mut context_values = get_json_from_paths(vec![path])?;
   context_values.push(get_cloud_plans());
-  Nya::run("base:build", context_values, payload, cloud_services).await?;
+  Nya::run("base:build", context_values, cloud_services, payload).await?;
   Ok(())
 }
 
@@ -41,7 +41,7 @@ pub async fn destroy(config: Option<PathBuf>) -> Result<()> {
   let cloud_services = get_cloud_services();
   let mut context_values = get_json_from_paths(vec![path])?;
   context_values.push(get_cloud_plans());
-  Nya::run("base:destroy", context_values, payload, cloud_services).await?;
+  Nya::run("base:destroy", context_values, cloud_services, payload).await?;
   Ok(())
 }
 

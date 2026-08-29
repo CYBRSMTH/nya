@@ -18,16 +18,16 @@ pub struct Nya {
 }
 
 impl Nya {
-  pub async fn run(cmd: &str, configs: Vec<Value>, initial_payload: Payload, services: Vec<Box<dyn Service>>) -> Result<()> {
-    let nya = Nya::build(cmd, configs, services, initial_payload)?;
-    nya.execute().await;
+  pub async fn run(command: &str, configs: Vec<Value>, services: Vec<Box<dyn Service>>, initial_payload: Payload) -> Result<()> {
+    let nya = Nya::build(command, configs, services, initial_payload)?;
+    nya.execute().await?;
     Ok(())
   }
 
-  pub fn build(cmd: &str, configs: Vec<Value>, reg: Vec<Box<dyn Service>>, initial_payload: Payload) -> Result<Self> {
-    let nya_event_bus = build_nya_bus(reg);
+  pub fn build(command: &str, configs: Vec<Value>, services: Vec<Box<dyn Service>>, initial_payload: Payload) -> Result<Self> {
+    let nya_event_bus = build_nya_bus(services);
     let ctx = NyaContext::new(configs, initial_payload)?;
-    let plan = NyaPlan::new(cmd, ctx.clone())?;
+    let plan = NyaPlan::new(command, ctx.clone())?;
     let internals = NyaInternals {
       context: Arc::new(Mutex::new(ctx)),
       plan,
@@ -40,11 +40,12 @@ impl Nya {
     })
   }
 
-  pub async fn execute(&self) {
+  pub async fn execute(&self) -> Result<()> {
     for step in self.internals.plan.steps.iter() {
-      self.internals.bus.clone().emit(self.clone(), step.clone(), Payload::empty()).await;
+      self.internals.bus.clone().emit(self.clone(), step.clone(), Payload::empty()).await?;
       self.internals.task_tracker.wait_all().await;
     }
+    Ok(())
   }
 
   pub async fn get(&self, key: &str) -> Value {
@@ -77,7 +78,7 @@ impl Nya {
     }
   }
 
-  pub async fn log(&self, log: String) {
+  pub async fn log(&self, log: &str) {
     println!("{}", log);
   }
 }
@@ -85,7 +86,7 @@ impl Nya {
 fn build_nya_bus(reg: Vec<Box<dyn Service>>) -> NyaEventBus {
   let mut nya_event_bus = NyaEventBus::new();
   let mut service_handlers = Vec::new();
-  for service in reg.iter().clone() {
+  for service in reg.iter() {
     service_handlers.extend(service.register());
   }
   for handler in service_handlers {
