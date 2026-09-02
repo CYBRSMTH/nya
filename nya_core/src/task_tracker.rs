@@ -1,12 +1,13 @@
 use tokio::{sync::Mutex, task::JoinHandle};
+use anyhow::Result;
 
 pub struct TaskTracker {
-    handles: Mutex<Vec<JoinHandle<()>>>
+    handles: Mutex<Vec<JoinHandle<Result<()>>>>,
 }
 
 impl TaskTracker {
     pub fn new() -> Self { Self { handles: Mutex::new(vec![]) } }
-    pub async fn add(&self, handle: JoinHandle<()>) {
+    pub async fn add(&self, handle: JoinHandle<Result<()>>) {
         self.handles.lock().await.push(handle);
     }
     pub async fn wait_all(&self) {
