@@ -20,7 +20,7 @@ impl NyaEventBus {
 #[async_trait::async_trait]
 pub trait EventBus: Send + Sync + 'static {
   fn on(&mut self, event: String, handler: Action);
-  async fn emit(&self, nya: Nya, event: String, payload: Payload) -> Result<()>;
+  async fn emit(&self, nya: Nya, event: String, payload: Payload);
 }
 
 #[async_trait::async_trait]
@@ -29,14 +29,11 @@ impl EventBus for NyaEventBus {
     self.event_handlers.insert(event, handler);
   }
   
-  async fn emit(&self, nya: Nya, event: String, payload: Payload) -> Result<()> {
+  async fn emit(&self, nya: Nya, event: String, payload: Payload) {
     if let Some(handler) = self.event_handlers.get(&event) {
       let nya_clone: Nya = nya.clone();
       let handler_clone = Arc::clone(handler);
       handler_clone(nya_clone, payload).await;
-      Ok(())
-    } else {
-      bail!("No handler registered for event: {}", event); // TODO: Write a test for this
     }
   }
 }

@@ -20,7 +20,7 @@ pub struct Nya {
 impl Nya {
   pub async fn run(command: &str, configs: Vec<Value>, services: Vec<Box<dyn Service>>, initial_payload: Payload) -> Result<()> {
     let nya = Nya::build(command, configs, services, initial_payload)?;
-    nya.execute().await?;
+    nya.execute().await;
     Ok(())
   }
 
@@ -40,12 +40,11 @@ impl Nya {
     })
   }
 
-  pub async fn execute(&self) -> Result<()> {
+  pub async fn execute(&self) {
     for step in self.internals.plan.steps.iter() {
-      self.internals.bus.clone().emit(self.clone(), step.clone(), Payload::empty()).await?;
+      self.internals.bus.clone().emit(self.clone(), step.clone(), Payload::empty()).await;
       self.internals.task_tracker.wait_all().await;
     }
-    Ok(())
   }
 
   pub async fn get(&self, key: &str) -> Value {
@@ -63,22 +62,19 @@ impl Nya {
     }
   }
 
-  pub async fn trigger(&self, event: &str, payload: Payload) -> Result<()> {
+  pub async fn trigger(&self, event: &str, payload: Payload) {
     let nya = self.clone();
     let event_name = event.to_string();
-    let handle: JoinHandle<Result<()>> = tokio::spawn(async move {
-        nya.internals.bus.emit(nya.clone(), event_name, payload).await?;
-      Ok(())
+    let handle: JoinHandle<()> = tokio::spawn(async move {
+        nya.internals.bus.emit(nya.clone(), event_name, payload).await;
     });
     self.internals.task_tracker.add(handle).await;
-    Ok(())
   }
 
-  pub async fn trigger_all(&self, triggers: Vec<(&str, Payload)>) -> Result<()> {
+  pub async fn trigger_all(&self, triggers: Vec<(&str, Payload)>) {
     for (event, payload) in triggers {
-      self.trigger(event, payload).await?;
+      self.trigger(event, payload).await;
     }
-    Ok(())
   }
 
   pub async fn log(&self, log: &str) {

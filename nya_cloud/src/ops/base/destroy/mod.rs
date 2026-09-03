@@ -5,6 +5,10 @@ use openssh::Session;
 use serde::Serialize;
 use serde_json::Value;
 use tera::Context;
+use crate::ops::types::BaseNodeConfig;
+use utils::create_ssh_session;
+use crate::ops::types;
+use anyhow::Result;
 
 const REMOVE_DOCKER_SCRIPT: &str = include_str!("scripts/remove_docker.sh");
 const REMOVE_K3S_SERVER_SCRIPT: &str = include_str!("scripts/remove_k3s_server.sh");
@@ -16,9 +20,6 @@ const REMOVE_BIND9_SCRIPT: &str = include_str!("scripts/remove_bind9.sh");
 
 pub struct NyaBaseDestroy;
 
-use crate::ops::types::BaseNodeConfig;
-use utils::create_ssh_session;
-use crate::ops::types;
 
 impl Service for NyaBaseDestroy {
   fn name(&self) -> String {"NyaBase".to_string()}
