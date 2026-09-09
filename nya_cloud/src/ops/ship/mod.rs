@@ -144,7 +144,7 @@ async fn deploy_capsule(nya: Nya, _: Payload) {
 }
 
 async fn push_image(image_name: &str, nya: Nya) {
-    nya.log(format!("Pushing {}...", image_name).as_ref()).await;
+    nya.log(&format!("Pushing {}...", image_name)).await;
     
     let mut cmd = Command::new("docker");
     cmd.args(["push", image_name])

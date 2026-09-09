@@ -3,7 +3,7 @@ use colored::*;
 use inquire::Text;
 use serde::Serialize;
 use serde_json::Value;
-use crate::cli::defaults;
+use crate::defaults;
 use crate::cli::pack::Pack;
 use crate::cli::utils::{ConfigStatus, verify_capsule};
 
@@ -83,22 +83,6 @@ fn create_new_capsule_file(output_path: PathBuf) -> CreateNewCapsuleResult {
 
   CreateNewCapsuleResult::Success(file_path)
 
-}
-
-pub fn check(path: Option<PathBuf>) {
-  let exists = verify_capsule(path);
-  match exists {
-    ConfigStatus::Exists(path) => {
-      let current_capsule = read_capsule_file(path);
-      println!("{}", "A Capsule file exists in this directory.".green());
-      if let Some(capsule) = current_capsule {
-        println!("Capsule name: {}", capsule["capsule"]["name"]);
-      }
-    },
-    ConfigStatus::Missing(_) => {
-      println!("{}", "No Capsule file found in this directory.".yellow());
-    }
-  }
 }
 
 fn get_capsule_path(path: PathBuf) -> PathBuf {

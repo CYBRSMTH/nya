@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use anyhow::{Result,Context};
 use serde_json::{from_str, Value};
 
 pub fn base_config_default_location() -> PathBuf {
@@ -14,6 +15,7 @@ pub const CAPSULE_DEFAULT_FILE_DIR_AND_NAME: &str = ".nya/nya.json";
 
 pub const NYA_CLOUD_PLANS: &str = include_str!("nya_cloud_plans.json");
 
-pub fn get_cloud_plans() -> Value {
-  from_str(NYA_CLOUD_PLANS).unwrap()
+pub fn get_cloud_plans() -> Result<Value> {
+  let json = from_str(NYA_CLOUD_PLANS).context("Failed to deserialize nya cloud plans")?;
+  Ok(json)
 }

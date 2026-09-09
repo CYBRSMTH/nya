@@ -1,9 +1,7 @@
+use crate::ops::types::{BaseNodeConfig, NodeCommandResult};
+use nya_core::runtime::Nya;
 use openssh::{Session, SessionBuilder};
 use serde_json::Value;
-use nya_core::runtime::Nya;
-use std::process::Stdio;
-use tokio::process::Command;
-use crate::ops::types::{BaseNodeConfig, NodeCommandResult};
 
 pub async fn get_base_nodes(nya: Nya) -> Vec<BaseNodeConfig> {
   let control_plane_value: Value = nya.get("nya.control_plane").await;
@@ -113,52 +111,4 @@ pub async fn prepare_base_context(nya: Nya) {
   let control_plane = nya.get("nya.control_plane").await;
   let control_plane_host = control_plane.get("host").and_then(|v| v.as_str()).unwrap_or("");
   let _ = nya.set("nya.control_plane.host", control_plane_host.to_string()).await;
-}
-
-
-
-pub fn generate_sha(location: &str) -> String {
-  // Try git sha first
-  let output = std::process::Command::new("git")
-      .args(["rev-parse", "--short", "HEAD"])
-      .current_dir(location)
-      .output();
-
-  if let Ok(out) = output {
-    if out.status.success() {
-      return String::from_utf8_lossy(&out.stdout).trim().to_string();
-    }
-  }
-
-  // Fallback to timestamp-based sha
-  use std::time::{SystemTime, UNIX_EPOCH};
-  let ts = SystemTime::now()
-      .duration_since(UNIX_EPOCH)
-      .unwrap()
-      .as_secs();
-  format!("{:x}", ts)[..7].to_string()
-}
-
-pub async fn run_ssh(host: &str, user: &str, key: &str, cmd: &str) -> Result<(), String> {
-  let mut command = Command::new("ssh");
-  command
-      .args([
-        "-i", key,
-        "-o", "StrictHostKeyChecking=no",
-        "-o", "UserKnownHostsFile=/dev/null",
-        "-o", "IdentitiesOnly=yes",
-        &format!("{}@{}", user, host),
-        cmd
-      ])
-      .stdin(Stdio::null())
-      .stdout(Stdio::piped())
-      .stderr(Stdio::piped());
-
-  let output = command.output().await.map_err(|e| e.to_string())?;
-
-  if !output.status.success() {
-    return Err(String::from_utf8_lossy(&output.stderr).to_string());
-  }
-
-  Ok(())
 }

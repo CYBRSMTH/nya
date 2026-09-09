@@ -1,10 +1,8 @@
-use std::path::PathBuf;
-use nya_core::{runtime::Nya, payload::Payload};
-use crate::cli::utils::{get_json_from_paths, verify_base_config, ConfigStatus};
-use anyhow::{Result, bail};
+use crate::cli::utils::{verify_base_config, ConfigStatus};
+use crate::runner::run_nya_command;
+use anyhow::{bail, Result};
 use serde::{Deserialize, Serialize};
-use crate::cli::defaults::get_cloud_plans;
-use crate::ops::get_cloud_services;
+use std::path::PathBuf;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct BaseCommandPayload {
@@ -20,11 +18,7 @@ pub async fn build(config: Option<PathBuf>) -> Result<()> {
     },
   };
   let base_command_payload = get_base_command_payload(path.clone())?;
-  let payload = Payload::new(base_command_payload);
-  let cloud_services = get_cloud_services();
-  let mut context_values = get_json_from_paths(vec![path])?;
-  context_values.push(get_cloud_plans());
-  Nya::run("base:build", context_values, cloud_services, payload).await?;
+  run_nya_command("base:build", vec![path], Some(base_command_payload)).await?;
   Ok(())
 }
 
@@ -37,16 +31,11 @@ pub async fn destroy(config: Option<PathBuf>) -> Result<()> {
     }
   };
   let base_command_payload = get_base_command_payload(path.clone())?;
-  let payload = Payload::new(base_command_payload);
-  let cloud_services = get_cloud_services();
-  let mut context_values = get_json_from_paths(vec![path])?;
-  context_values.push(get_cloud_plans());
-  Nya::run("base:destroy", context_values, cloud_services, payload).await?;
+  run_nya_command("base:build", vec![path], Some(base_command_payload)).await?;
   Ok(())
 }
 
 fn get_base_command_payload(base_path: PathBuf) -> Result<String> {
-
   let base_path_string = base_path.to_str().unwrap().to_string();
   let base_command_payload = BaseCommandPayload {
     base_config_path: base_path_string,
