@@ -14,7 +14,7 @@ where
 
 pub trait Service: Send + Sync + 'static {
     fn name(&self) -> String;
-    fn register(&self) -> ServiceActions;
+    fn actions(&self) -> ServiceActions;
 }
 
 #[cfg(test)]
@@ -34,7 +34,7 @@ pub mod service_tests{
   pub struct TestService;
   impl Service for TestService {
     fn name(&self) -> String { "Test Service".to_string()}
-    fn register(&self) -> ServiceActions {
+    fn actions(&self) -> ServiceActions {
         vec![
           ("test".to_string(), handle_action(test_fn)),
           ("test2".to_string(), handle_action(test_fn2))
@@ -65,7 +65,7 @@ pub mod service_tests{
   #[tokio::test]
   async fn can_create_service() {
     let svc = Box::new(TestService);
-    let new_svc = &svc.register();
+    let new_svc = &svc.actions();
     let new_svc_name = &svc.name();
     let value: usize = 2;
     assert_eq!(*new_svc_name, "Test Service".to_string());

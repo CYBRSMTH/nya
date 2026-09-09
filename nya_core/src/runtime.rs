@@ -86,7 +86,7 @@ fn build_nya_bus(reg: Vec<Box<dyn Service>>) -> NyaEventBus {
   let mut nya_event_bus = NyaEventBus::new();
   let mut service_handlers = Vec::new();
   for service in reg.iter() {
-    service_handlers.extend(service.register());
+    service_handlers.extend(service.actions());
   }
   for handler in service_handlers {
     nya_event_bus.register(handler.0, handler.1);

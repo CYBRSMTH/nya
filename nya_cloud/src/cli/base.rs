@@ -31,7 +31,7 @@ pub async fn destroy(config: Option<PathBuf>) -> Result<()> {
     }
   };
   let base_command_payload = get_base_command_payload(path.clone())?;
-  run_nya_command("base:build", vec![path], Some(base_command_payload)).await?;
+  run_nya_command("base:destroy", vec![path], Some(base_command_payload)).await?;
   Ok(())
 }
 

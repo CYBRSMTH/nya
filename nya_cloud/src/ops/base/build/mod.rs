@@ -13,7 +13,7 @@ pub struct NyaBaseBuild;
 
 impl Service for NyaBaseBuild {
   fn name(&self) -> String {"NyaBase".to_string()}
-  fn register(&self) -> ServiceActions {
+  fn actions(&self) -> ServiceActions {
     vec![
       (String::from("onPreBuild"), handle_action(prebuild_action)),
       (String::from("runPreBuild"), handle_action(run_prebuild_script)),

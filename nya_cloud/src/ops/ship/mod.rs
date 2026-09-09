@@ -9,7 +9,7 @@ pub struct NyaShip;
 
 impl Service for NyaShip {
   fn name(&self) -> String {"NyaShip".to_string()}
-  fn register(&self) -> ServiceActions {
+  fn actions(&self) -> ServiceActions {
     vec![
       ("onBuildPacks".to_string(), handle_action(build_packs)),
       ("onDeployCapsule".to_string(), handle_action(deploy_capsule)),
@@ -207,7 +207,7 @@ async fn helm_deploy(ctx: &PackContext, nya: Nya) {
         ctx.pack_name
     );
     
-    nya.log(format!("Deploying {}...", ctx.pack_name).as_ref()).await;
+    nya.log(&format!("Deploying {}...", ctx.pack_name)).await;
     
     let mut cmd = Command::new("ssh");
     cmd.args([

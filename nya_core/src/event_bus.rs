@@ -56,7 +56,7 @@ use crate::{
   async fn can_register_events() {
     let mut event_bus = NyaEventBus::new();
     let svc = Box::new(TestService);
-    event_bus.register("test_event".to_string(), svc.register()[0].1.clone());
+    event_bus.register("test_event".to_string(), svc.actions()[0].1.clone());
     assert_eq!(event_bus.event_handlers.len(), 1);
   }
 
@@ -71,8 +71,8 @@ use crate::{
     let configs = vec![json];
     let mut event_bus = NyaEventBus::new();
     let svc = Box::new(TestService);
-    let handler= svc.register()[0].1.clone();
-    let event_name = svc.register()[0].0.clone();
+    let handler= svc.actions()[0].1.clone();
+    let event_name = svc.actions()[0].0.clone();
     let test_nya = Nya::build("test_cmd", configs, vec![Box::new(TestService)], Payload::empty())?;
     {
       event_bus.register(event_name.clone(), handler);
@@ -96,8 +96,8 @@ use crate::{
     let configs = vec![json];
     let mut event_bus = NyaEventBus::new();
     let svc = Box::new(TestService);
-    let handler= svc.register()[0].1.clone();
-    let event_name = svc.register()[0].0.clone();
+    let handler= svc.actions()[0].1.clone();
+    let event_name = svc.actions()[0].0.clone();
     let test_nya = Nya::build("test_cmd", configs, vec![Box::new(TestService)], Payload::empty())?;
     {
       event_bus.register(event_name.clone(), handler);

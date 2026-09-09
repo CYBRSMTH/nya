@@ -22,7 +22,7 @@ pub struct NyaBaseDestroy;
 
 impl Service for NyaBaseDestroy {
   fn name(&self) -> String {"NyaBase".to_string()}
-  fn register(&self) -> ServiceActions {
+  fn actions(&self) -> ServiceActions {
     vec![
       (String::from("onDestroyBase"), handle_action(destroy_action)),
       (String::from("runCleanupNode"), handle_action(run_cleanup_node_script)),
