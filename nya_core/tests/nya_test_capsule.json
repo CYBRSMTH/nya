@@ -1,0 +1,7 @@
+{
+  "capsule_name": "my_capsule",
+  "packs": [
+    { "name": "frontend", "type": "frontend", "dir": "./frontend" },
+    { "name": "api", "type": "backend", "dir": "./api" }
+  ]
+}
