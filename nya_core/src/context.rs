@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use serde_json::{Value, Map};
-use anyhow::Result;
+use anyhow::{bail, Result};
 use crate::payload::{Payload, Take};
 
 #[derive(Clone)]
@@ -31,6 +31,9 @@ impl NyaContext {
         }
       } else if let Value::Array(arr) = payload_val {
         context.insert("initial_payload".to_string(), Value::Array(arr));
+      }
+      else {
+        bail!("Initial payload provided is not a valid type. Initial payload should be an object or array"); // TODO: thiserror
       }
     }
 

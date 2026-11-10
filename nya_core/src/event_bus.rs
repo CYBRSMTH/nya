@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 use crate::payload::Payload;
-use crate::service::Action;
+use crate::service::{Action, Service};
 use crate::runtime::Nya;
 
 pub struct NyaEventBus {
@@ -9,10 +9,19 @@ pub struct NyaEventBus {
 }
 
 impl NyaEventBus {
-  pub fn new() -> Self {
-    Self {
+  pub fn new(reg: Vec<Box<dyn Service>>) -> Self {
+    let mut new_bus = Self {
       event_handlers: HashMap::new(),
+    };
+
+    let mut service_handlers = Vec::new();
+    for service in reg.iter() {
+      service_handlers.extend(service.actions());
     }
+    for handler in service_handlers {
+      new_bus.register(handler.0, handler.1);
+    }
+    new_bus
   }
 }
 
@@ -52,12 +61,14 @@ use crate::{
         }
     }, runtime::Nya};
 
+  fn get_test_services() -> Vec<Box<dyn Service>> {
+    vec![Box::new(TestService)]
+  }
+
   #[tokio::test]
   async fn can_register_events() {
-    let mut event_bus = NyaEventBus::new();
-    let svc = Box::new(TestService);
-    event_bus.register("test_event".to_string(), svc.actions()[0].1.clone());
-    assert_eq!(event_bus.event_handlers.len(), 1);
+    let event_bus = NyaEventBus::new(get_test_services());
+    assert_eq!(event_bus.event_handlers.len(), 2);
   }
 
   #[tokio::test]
@@ -69,18 +80,14 @@ use crate::{
     let json: Value = serde_json::from_str(&content)
         .context(format!("Failed to parse {}", path.display()))?;
     let configs = vec![json];
-    let mut event_bus = NyaEventBus::new();
-    let svc = Box::new(TestService);
-    let handler= svc.actions()[0].1.clone();
-    let event_name = svc.actions()[0].0.clone();
+    let event_bus = NyaEventBus::new(get_test_services());
     let test_nya = Nya::build("test_cmd", configs, vec![Box::new(TestService)], Payload::empty())?;
     {
-      event_bus.register(event_name.clone(), handler);
-      event_bus.emit(test_nya.clone(), event_name, Payload::empty()).await;
+      event_bus.emit(test_nya.clone(), "test".to_string(), Payload::empty()).await;
     }
     tokio::task::yield_now().await;
     let ctx_val = test_nya.get("test_key").await;
-    let value: String = from_value(ctx_val.clone()).unwrap();
+    let value: String = from_value(ctx_val.clone())?;
     assert_eq!(value, "test_value".to_string());
     Ok(())
   }
@@ -94,13 +101,9 @@ use crate::{
     let json: Value = serde_json::from_str(&content)
         .context(format!("Failed to parse {}", path.display()))?;
     let configs = vec![json];
-    let mut event_bus = NyaEventBus::new();
-    let svc = Box::new(TestService);
-    let handler= svc.actions()[0].1.clone();
-    let event_name = svc.actions()[0].0.clone();
+    let event_bus = NyaEventBus::new(get_test_services());
     let test_nya = Nya::build("test_cmd", configs, vec![Box::new(TestService)], Payload::empty())?;
     {
-      event_bus.register(event_name.clone(), handler);
       event_bus.emit(test_nya.clone(), "fake_event".to_string(), Payload::empty()).await;
     }
     tokio::task::yield_now().await;
@@ -108,5 +111,4 @@ use crate::{
     assert_eq!(Value::Null, ctx_val);
     Ok(())
   }
-
 }

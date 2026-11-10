@@ -18,16 +18,16 @@ pub struct Nya {
 }
 
 impl Nya {
-  pub async fn run(command: &str, configs: Vec<Value>, services: Vec<Box<dyn Service>>, initial_payload: Payload) -> Result<()> {
-    let nya = Nya::build(command, configs, services, initial_payload)?;
+  pub async fn run(plan: &str, configs: Vec<Value>, services: Vec<Box<dyn Service>>, initial_payload: Payload) -> Result<()> {
+    let nya = Nya::build(plan, configs, services, initial_payload)?;
     nya.execute().await;
     Ok(())
   }
 
-  pub fn build(command: &str, configs: Vec<Value>, services: Vec<Box<dyn Service>>, initial_payload: Payload) -> Result<Self> {
-    let nya_event_bus = build_nya_bus(services);
+  pub fn build(plan: &str, configs: Vec<Value>, services: Vec<Box<dyn Service>>, initial_payload: Payload) -> Result<Self> {
+    let nya_event_bus = NyaEventBus::new(services);
     let ctx = NyaContext::new(configs, initial_payload)?;
-    let plan = NyaPlan::new(command, ctx.clone())?;
+    let plan = NyaPlan::new(plan, ctx.clone())?;
     let internals = NyaInternals {
       context: Arc::new(Mutex::new(ctx)),
       plan,
@@ -80,18 +80,6 @@ impl Nya {
   pub async fn log(&self, log: &str) {
     println!("{}", log);
   }
-}
-
-fn build_nya_bus(reg: Vec<Box<dyn Service>>) -> NyaEventBus {
-  let mut nya_event_bus = NyaEventBus::new();
-  let mut service_handlers = Vec::new();
-  for service in reg.iter() {
-    service_handlers.extend(service.actions());
-  }
-  for handler in service_handlers {
-    nya_event_bus.register(handler.0, handler.1);
-  }
-  nya_event_bus
 }
 
 #[cfg(test)]

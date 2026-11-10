@@ -1,0 +1,25 @@
+{
+  "nya.control_plane": {
+    "host": "provide your server's ip address or dns name",
+    "user": "provide your server's user name",
+    "ssh_private_key_file": "provide the path to your ssh private key file"
+  },
+  "nya.nodes": [
+    {
+      "host": "provide your server's ip address or dns name",
+      "user": "provide your server's user name",
+      "ssh_private_key_file": "provide the path to your ssh private key file"
+    }
+  ],
+  "nya.control_plane.vars": {
+    "k3s_token": "provide any value",
+    "domain_name": "provide your full domain name",
+    "admin_email": "provide an email address",
+    "secret_name": "provide a secret name to use for your tls certs",
+    "mkcert_os": "provide the os you're building for (i.e. linux, win64)",
+    "mkcert_arch": "provide the cpu architecture you're building for (i.e. arm64, amd64)",
+    "mkcert_version": "v1.4.4",
+    "metallb_ip_range": "provide the IP address range that you'd like to use for MetalLb. Example: 10.0.0.200-10.0.0.250"
+  },
+  "nya.registry_host": "provide the ip address or domain name for your docker registry. Remove this to default to the control plane"
+}

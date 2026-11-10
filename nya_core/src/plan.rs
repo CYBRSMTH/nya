@@ -19,11 +19,6 @@ impl NyaPlan {
           }
         )
     }
-    
-    // TODO: create fn to return plans, will have to set all plans in struct first
-    // pub fn list_schemas(&self) -> Vec<&String> {
-    //     self.plans.keys().collect()
-    // }
 }
 
 fn get_plan(cmd: &str, ctx: NyaContext) -> Result<NyaPlanSteps> {
