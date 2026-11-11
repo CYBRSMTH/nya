@@ -1,0 +1,13 @@
+components:
+  - name: refactor-fe
+    type: "frontend"
+    replicaCount: 1
+    image:
+      name: refactor-fe
+      tag: "latest"
+    service:
+      port: 80
+    ingress:
+      host: refactor-fe
+    tls:
+      enabled: true

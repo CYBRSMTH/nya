@@ -1,0 +1,17 @@
+{
+  "capsule": {
+    "name": "refactor-test",
+    "created_at": "2026-11-11T01:40:17.446359+00:00",
+    "updated_at": "2026-11-11T01:40:56.946583+00:00",
+    "packs": [
+      {
+        "name": "refactor-fe",
+        "pack_type": "frontend",
+        "location": "refactor-fe",
+        "created_at": "2026-11-11T01:40:56.944019+00:00",
+        "updated_at": "2026-11-11T01:40:56.944029+00:00",
+        "port": null
+      }
+    ]
+  }
+}
