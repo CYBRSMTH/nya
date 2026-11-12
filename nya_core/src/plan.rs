@@ -3,13 +3,13 @@ use std::collections::HashMap;
 use crate::context::NyaContext;
 use anyhow::{Result, bail};
 
-type NyaPlans = HashMap<String, NyaPlan>;
 type NyaPlanSteps = Vec<String>;
-
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct NyaPlan {
     pub steps: NyaPlanSteps,
 }
+
+type NyaPlans = HashMap<String, NyaPlan>;
 
 impl NyaPlan {
     pub fn new(cmd: &str, ctx: NyaContext) -> Result<Self> {
@@ -36,7 +36,7 @@ fn get_plan(cmd: &str, ctx: NyaContext) -> Result<NyaPlanSteps> {
 }
 
 #[cfg(test)]
-mod schema_tests {
+mod plan_tests {
   use std::fs::read_to_string;
   use std::path::PathBuf;
   use crate::context::NyaContext;

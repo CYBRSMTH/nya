@@ -68,6 +68,6 @@ impl Take for Payload {
             .map_err(|_| anyhow!("Could not get the value because the types mismatched"))?;
         // Now try_unwrap works because Arc<T> where T: Sized is fine
 
-      Ok(Arc::try_unwrap(arc_t).map_err(|_| anyhow!("Could create the Arc because value is already shared"))?)
+      Ok(Arc::try_unwrap(arc_t).map_err(|_| anyhow!("Couldn't create the Arc because value is already shared"))?)
     }
 }
