@@ -1,0 +1,25 @@
+{
+  "plans": {
+    "base:build": {
+      "steps": [
+        "onPreBuild",
+        "onBuildControlPlane",
+        "onCompleteCluster",
+        "onClusterReady",
+        "onBuildComplete",
+        "onFinish"
+      ]
+    },
+    "base:destroy": {
+      "steps": [
+        "onDestroyBase"
+      ]
+    },
+    "capsule:ship": {
+      "steps": [
+        "onBuildPacks",
+        "onDeployCapsule"
+      ]
+    }
+  }
+}

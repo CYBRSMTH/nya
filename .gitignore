@@ -29,3 +29,6 @@ target
 
 *.idea*
 *.claude*
+*.vscode*
+*.DS_Store
+*nya_base_config.json
