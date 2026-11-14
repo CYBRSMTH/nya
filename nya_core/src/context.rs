@@ -1,40 +1,30 @@
 use std::collections::HashMap;
 use serde_json::{Value, Map};
-use anyhow::{bail, Result};
-use crate::payload::{Payload, Take};
+use crate::errors::NyaError;
+use crate::errors::NyaError::NyaContextInvalidType;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct NyaContext {
   pub context: HashMap<String, Value>
 }
 
 impl NyaContext {
-  pub fn new(configs: Vec<Value>, initial_payload: Payload) -> Result<NyaContext> {
-    let mut context: Map<String, Value> = configs
-        .into_iter()
-        .fold(Map::new(), | mut acc, config: Value| {
-          if let Value::Object(map) = config {
-            for (k, value) in map {
-              acc.insert(k, value);
-            }
+  pub fn new(configs: Vec<Value>) -> Result<NyaContext, NyaError> {
+    let mut invalid_config: bool = false;
+    let context: Map<String, Value> = configs.into_iter()
+      .fold(Map::new(), | mut acc, config: Value| {
+        if let Value::Object(map) = config {
+          for (k, value) in map {
+            acc.insert(k, value);
           }
-          acc
-        });
-
-    if !initial_payload.is_empty() {
-      let payload_str = initial_payload.take::<String>()?;
-      let payload_val = serde_json::from_str::<Value>(&payload_str)?;
-
-      if let Value::Object(map) = payload_val {
-        for (k, value) in map {
-          context.insert(k, value);
+        } else {
+          invalid_config = true;
         }
-      } else if let Value::Array(arr) = payload_val {
-        context.insert("initial_payload".to_string(), Value::Array(arr));
-      }
-      else {
-        bail!("Initial payload provided is not a valid type. Initial payload should be an object or array"); // TODO: thiserror
-      }
+        acc
+      });
+
+    if invalid_config {
+      return Err(NyaContextInvalidType);
     }
 
     Ok(Self {
@@ -50,7 +40,7 @@ mod context_tests {
   use crate::context::NyaContext;
   use anyhow::{Context, Result};
   use serde_json::Value;
-  use crate::payload::Payload;
+  use crate::errors::NyaError;
 
   #[test]
   fn get_nya_context_returns_context() -> Result<()> {
@@ -60,7 +50,7 @@ mod context_tests {
 
     let json: Value = serde_json::from_str(&content)
         .context(format!("Failed to parse {}", path.display()))?;
-    let nya_context = NyaContext::new(vec![json], Payload::empty())?;
+    let nya_context = NyaContext::new(vec![json])?;
   
     let test_value = nya_context.context.get("test")
       .and_then(|v| v.as_str())
@@ -86,7 +76,7 @@ mod context_tests {
 
     let capsule_json: Value = serde_json::from_str(&capsule_content)
         .context(format!("Failed to parse {}", capsule_path.display()))?;
-    let nya_context = NyaContext::new(vec![config_json, capsule_json], Payload::empty())?;
+    let nya_context = NyaContext::new(vec![config_json, capsule_json])?;
   
     let test_value = nya_context.context.get("test")
       .and_then(|v| v.as_str())
@@ -99,6 +89,20 @@ mod context_tests {
     assert_eq!(test_value, "context_value");
     assert_eq!(test_value2, "my_capsule");
 
+    Ok(())
+  }
+
+  #[test]
+  fn context_throws_an_error_when_config_is_not_an_object() -> Result<()> {
+    let path = PathBuf::from("./tests/nya_context_invalid.json");
+    let content = read_to_string(&path)
+        .context(format!("Failed to read context file '{}'", path.display()))?;
+
+    let json: Value = serde_json::from_str(&content)
+        .context(format!("Failed to parse {}", path.display()))?;
+    let nya_context = NyaContext::new(vec![json]);
+
+    assert!(matches!(nya_context.unwrap_err(), NyaError::NyaContextInvalidType));
     Ok(())
   }
 }

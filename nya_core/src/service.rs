@@ -54,7 +54,7 @@ pub mod service_tests{
         .context(format!("Failed to parse {}", path.display()))?;
     let configs = vec![json];
     let new_svc_fn: Action = handle_action(test_fn);
-    let test_nya = Nya::build("test_cmd", configs, vec![Box::new(TestService)], Payload::empty())?;
+    let test_nya = Nya::build("test_cmd", configs, vec![Box::new(TestService)])?;
     new_svc_fn(test_nya.clone(), Payload::empty()).await;
     let value_json = test_nya.get("test_key").await;
     let value = value_json.as_str().unwrap();
