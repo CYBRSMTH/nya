@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use crate::context::NyaContext;
-use anyhow::{Result, bail};
+use crate::errors::NyaError;
+use crate::errors::NyaError::{NyaPlanInvalidCmd, NyaPlansMissing, NyaPlanParseFailed};
 
 type NyaPlanSteps = Vec<String>;
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -12,7 +13,7 @@ pub struct NyaPlan {
 type NyaPlans = HashMap<String, NyaPlan>;
 
 impl NyaPlan {
-    pub fn new(cmd: &str, ctx: NyaContext) -> Result<Self> {
+    pub fn new(cmd: &str, ctx: NyaContext) -> Result<NyaPlan, NyaError> {
        let plan = get_plan(cmd, ctx)?;
         Ok(Self {
             steps: plan,
@@ -21,18 +22,14 @@ impl NyaPlan {
     }
 }
 
-fn get_plan(cmd: &str, ctx: NyaContext) -> Result<NyaPlanSteps> {
-  let ctx_plans_json = ctx.context.get("plans");
-  let plans = match ctx_plans_json {
-    Some(json) => serde_json::from_value::<NyaPlans>(json.clone())?,
-    None => {
-      bail!("No plans were found. Please verify plans were added to your config".to_string());
-    }
-  };
-  if let Some(plan) = plans.get(cmd).clone() {
-      return Ok(plan.clone().steps);
-  }
-  bail!("Get plan(): wasn't able to successfully retrieve plan".to_string());
+fn get_plan(cmd: &str, ctx: NyaContext) -> Result<NyaPlanSteps, NyaError> {
+  let ctx_plans_value = ctx.context.get("plans")
+      .ok_or_else(|| NyaPlansMissing)?;
+  let mut plans = NyaPlans::deserialize(ctx_plans_value)
+      .map_err(|e| NyaPlanParseFailed(e))?;
+  let plan = plans.remove(cmd)
+      .ok_or_else(|| NyaPlanInvalidCmd(cmd.to_string()))?;
+  Ok(plan.steps)
 }
 
 #[cfg(test)]
@@ -43,7 +40,7 @@ mod plan_tests {
   use crate::plan::NyaPlan;
   use anyhow::{Context, Result};
   use serde_json::Value;
-  use crate::payload::Payload;
+  use crate::errors::NyaError;
 
   #[test]
     fn can_get_plan() -> Result<()> {
@@ -53,7 +50,7 @@ mod plan_tests {
 
     let json: Value = serde_json::from_str(&content)
         .context(format!("Failed to parse {}", path.display()))?;
-      let nya_context = NyaContext::new(vec![json], Payload::empty())?;
+      let nya_context = NyaContext::new(vec![json])?;
 
       let found = NyaPlan::new("test_cmd", nya_context)?;
       let steps_len: usize = 2;
@@ -69,10 +66,41 @@ mod plan_tests {
 
       let json: Value = serde_json::from_str(&content)
           .context(format!("Failed to parse {}", path.display()))?;
-      let nya_context = NyaContext::new(vec![json], Payload::empty())?;
+      let nya_context = NyaContext::new(vec![json])?;
       let result = NyaPlan::new("nonexistent", nya_context);
 
       assert!(result.is_err());
+      assert!(matches!(result.unwrap_err(), NyaError::NyaPlanInvalidCmd(_)));
       Ok(())
     }
+
+  #[test]
+  fn returns_error_if_plans_dont_exist() -> Result<()> {
+    let path = PathBuf::from("./tests/nya_test_no_plans.json");
+    let content = read_to_string(&path)
+        .context(format!("Failed to read context file '{}'", path.display()))?;
+
+    let json: Value = serde_json::from_str(&content)
+        .context(format!("Failed to parse {}", path.display()))?;
+    let nya_context = NyaContext::new(vec![json])?;
+    let result = NyaPlan::new("test_cmd", nya_context);
+    assert!(result.is_err());
+    assert!(matches!(result.unwrap_err(), NyaError::NyaPlansMissing));
+    Ok(())
+  }
+
+  #[test]
+  fn returns_error_when_json_parsing_fails() -> Result<()> {
+    let path = PathBuf::from("./tests/nya_test_plans_invalid_json.json");
+    let content = read_to_string(&path)
+        .context(format!("Failed to read context file '{}'", path.display()))?;
+
+    let json: Value = serde_json::from_str(&content)
+        .context(format!("Failed to parse {}", path.display()))?;
+    let nya_context = NyaContext::new(vec![json])?;
+    let result = NyaPlan::new("test_cmd", nya_context);
+    assert!(result.is_err());
+    assert!(matches!(result.unwrap_err(), NyaError::NyaPlanParseFailed(_)));
+    Ok(())
+  }
 }

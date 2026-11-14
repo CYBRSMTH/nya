@@ -81,7 +81,7 @@ use crate::{
         .context(format!("Failed to parse {}", path.display()))?;
     let configs = vec![json];
     let event_bus = NyaEventBus::new(get_test_services());
-    let test_nya = Nya::build("test_cmd", configs, vec![Box::new(TestService)], Payload::empty())?;
+    let test_nya = Nya::build("test_cmd", configs, vec![Box::new(TestService)])?;
     {
       event_bus.emit(test_nya.clone(), "test".to_string(), Payload::empty()).await;
     }
@@ -102,7 +102,7 @@ use crate::{
         .context(format!("Failed to parse {}", path.display()))?;
     let configs = vec![json];
     let event_bus = NyaEventBus::new(get_test_services());
-    let test_nya = Nya::build("test_cmd", configs, vec![Box::new(TestService)], Payload::empty())?;
+    let test_nya = Nya::build("test_cmd", configs, vec![Box::new(TestService)])?;
     {
       event_bus.emit(test_nya.clone(), "fake_event".to_string(), Payload::empty()).await;
     }

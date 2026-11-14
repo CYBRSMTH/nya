@@ -19,14 +19,14 @@ pub struct Nya {
 
 impl Nya {
   pub async fn run(plan: &str, configs: Vec<Value>, services: Vec<Box<dyn Service>>, initial_payload: Payload) -> Result<()> {
-    let nya = Nya::build(plan, configs, services, initial_payload)?;
-    nya.execute().await;
+    let nya = Nya::build(plan, configs, services)?;
+    nya.execute(initial_payload).await;
     Ok(())
   }
 
-  pub fn build(plan: &str, configs: Vec<Value>, services: Vec<Box<dyn Service>>, initial_payload: Payload) -> Result<Self> {
+  pub fn build(plan: &str, configs: Vec<Value>, services: Vec<Box<dyn Service>>) -> Result<Self> {
     let nya_event_bus = NyaEventBus::new(services);
-    let ctx = NyaContext::new(configs, initial_payload)?;
+    let ctx = NyaContext::new(configs)?;
     let plan = NyaPlan::new(plan, ctx.clone())?;
     let internals = NyaInternals {
       context: Arc::new(Mutex::new(ctx)),
@@ -40,9 +40,9 @@ impl Nya {
     })
   }
 
-  pub async fn execute(&self) {
+  pub async fn execute(&self, initial_payload: Payload) {
     for step in self.internals.plan.steps.iter() {
-      self.internals.bus.clone().emit(self.clone(), step.clone(), Payload::empty()).await;
+      self.internals.bus.clone().emit(self.clone(), step.clone(), initial_payload.clone()).await;
       self.internals.task_tracker.wait_all().await;
     }
   }
@@ -99,7 +99,7 @@ mod nya_tests {
     let json: Value = serde_json::from_str(&content)
         .context(format!("Failed to parse {}", path.display()))?;
     let configs = vec![json];
-    let _ = Nya::build("test_cmd", configs,vec![Box::new(TestService)], Payload::empty()).unwrap();
+    let _ = Nya::build("test_cmd", configs,vec![Box::new(TestService)]).unwrap();
     Ok(())
   }
 
@@ -112,8 +112,8 @@ mod nya_tests {
     let json: Value = serde_json::from_str(&content)
         .context(format!("Failed to parse {}", path.display()))?;
     let configs = vec![json];
-    let nya = Nya::build("test_cmd2", configs, vec![Box::new(TestService)], Payload::empty())?;
-    nya.execute().await;
+    let nya = Nya::build("test_cmd2", configs, vec![Box::new(TestService)])?;
+    nya.execute(Payload::empty()).await;
     tokio::task::yield_now().await;
     let ctx = nya.internals.context.lock().await;
     let val1 = ctx.context.get("test_key").unwrap().as_str().unwrap();
@@ -130,8 +130,8 @@ mod nya_tests {
   let json: Value = serde_json::from_str(&content)
       .context(format!("Failed to parse {}", path.display()))?;
   let configs = vec![json];
-    let nya = Nya::build("test_cmd2", configs, vec![Box::new(TestService)], Payload::empty())?;
-    nya.execute().await;
+    let nya = Nya::build("test_cmd2", configs, vec![Box::new(TestService)])?;
+    nya.execute(Payload::empty()).await;
     tokio::task::yield_now().await;
     let nya_val = &nya.get("test_key").await;
     assert_eq!("test_value", nya_val.as_str().unwrap());
@@ -147,7 +147,7 @@ mod nya_tests {
     let json: Value = serde_json::from_str(&content)
         .context(format!("Failed to parse {}", path.display()))?;
     let configs = vec![json];
-    let nya = Nya::build("test_cmd2", configs, vec![Box::new(TestService)], Payload::empty())?;
+    let nya = Nya::build("test_cmd2", configs, vec![Box::new(TestService)])?;
     let _ = &nya.set("test_key", "test_value").await;
     let nya_val = &nya.get("test_key").await;
     let val1 = nya_val.as_str().unwrap();
@@ -164,7 +164,7 @@ mod nya_tests {
     let json: Value = serde_json::from_str(&content)
         .context(format!("Failed to parse {}", path.display()))?;
     let configs = vec![json];
-    let nya = Nya::build("test_cmd2", configs, vec![Box::new(TestService)], Payload::empty())?;
+    let nya = Nya::build("test_cmd2", configs, vec![Box::new(TestService)])?;
     {
       nya.trigger("test", Payload::empty()).await;
     }
