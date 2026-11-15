@@ -25,10 +25,10 @@ pub mod service_tests{
   use serde_json::Value;
 
   pub async fn test_fn(nya: Nya, _: Payload) {
-    nya.set("test_key", serde_json::Value::String("test_value".to_string())).await;
+    nya.set("test_key", Value::String("test_value".to_string())).await;
   }
   pub async fn test_fn2(nya: Nya, _: Payload) {
-    nya.set("test_key2", serde_json::Value::String("test_value2".to_string())).await;
+    nya.set("test_key2", Value::String("test_value2".to_string())).await;
   }
 
   pub struct TestService;

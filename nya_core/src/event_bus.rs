@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
+use crate::errors::NyaError;
+use crate::errors::NyaError::{NyaServiceActionsDuplicates, NyaServiceMissingActions};
 use crate::payload::Payload;
 use crate::service::{Action, Service};
 use crate::runtime::Nya;
@@ -9,7 +11,7 @@ pub struct NyaEventBus {
 }
 
 impl NyaEventBus {
-  pub fn new(reg: Vec<Box<dyn Service>>) -> Self {
+  pub fn new(reg: Vec<Box<dyn Service>>) -> Result<Self, NyaError> {
     let mut new_bus = Self {
       event_handlers: HashMap::new(),
     };
@@ -18,10 +20,19 @@ impl NyaEventBus {
     for service in reg.iter() {
       service_handlers.extend(service.actions());
     }
+    
+    if service_handlers.is_empty() {
+      return Err(NyaServiceMissingActions);
+    }
+    
     for handler in service_handlers {
+      let existing_handler =  &new_bus.event_handlers.get(&handler.0);
+      if !existing_handler.is_none() {
+        return Err(NyaServiceActionsDuplicates(handler.0.clone()));
+      }
       new_bus.register(handler.0, handler.1);
     }
-    new_bus
+    Ok(new_bus)
   }
 }
 
@@ -29,6 +40,7 @@ impl NyaEventBus {
 pub trait EventBus: Send + Sync + 'static {
   fn register(&mut self, event: String, handler: Action);
   async fn emit(&self, nya: Nya, event: String, payload: Payload);
+  fn verify(&self, event: &String) -> bool;
 }
 
 #[async_trait::async_trait]
@@ -38,11 +50,13 @@ impl EventBus for NyaEventBus {
   }
   
   async fn emit(&self, nya: Nya, event: String, payload: Payload) {
-    let handler = self.event_handlers.get(&event).map(Arc::clone);
-    match handler {
-      Some(handler) => { handler(nya, payload).await; }
-      None => println!("No handler registered for event: {}", event)
-    }
+    let handler = self.event_handlers.get(&event).map(Arc::clone).unwrap();
+    handler(nya, payload).await;
+  }
+  
+  fn verify(&self, event: &String) -> bool {
+    let handler = self.event_handlers.get(event);
+    handler.is_some()
   }
 }
 
@@ -66,9 +80,10 @@ use crate::{
   }
 
   #[tokio::test]
-  async fn can_register_events() {
-    let event_bus = NyaEventBus::new(get_test_services());
+  async fn can_register_events() -> Result<()> {
+    let event_bus = NyaEventBus::new(get_test_services())?;
     assert_eq!(event_bus.event_handlers.len(), 2);
+    Ok(())
   }
 
   #[tokio::test]
@@ -80,7 +95,7 @@ use crate::{
     let json: Value = serde_json::from_str(&content)
         .context(format!("Failed to parse {}", path.display()))?;
     let configs = vec![json];
-    let event_bus = NyaEventBus::new(get_test_services());
+    let event_bus = NyaEventBus::new(get_test_services())?;
     let test_nya = Nya::build("test_cmd", configs, vec![Box::new(TestService)])?;
     {
       event_bus.emit(test_nya.clone(), "test".to_string(), Payload::empty()).await;
@@ -101,7 +116,7 @@ use crate::{
     let json: Value = serde_json::from_str(&content)
         .context(format!("Failed to parse {}", path.display()))?;
     let configs = vec![json];
-    let event_bus = NyaEventBus::new(get_test_services());
+    let event_bus = NyaEventBus::new(get_test_services())?;
     let test_nya = Nya::build("test_cmd", configs, vec![Box::new(TestService)])?;
     {
       event_bus.emit(test_nya.clone(), "fake_event".to_string(), Payload::empty()).await;

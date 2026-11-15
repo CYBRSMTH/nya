@@ -3,7 +3,8 @@ use serde::Serialize;
 use serde_json::Value;
 use tokio::{sync::Mutex, task::JoinHandle};
 use crate::{context::NyaContext, event_bus::{EventBus, NyaEventBus}, payload::Payload, plan::NyaPlan, service::Service, task_tracker::TaskTracker};
-use anyhow::{Result};
+use crate::errors::NyaError;
+use crate::validation::validate_run;
 
 struct NyaInternals {
   context: Arc<Mutex<NyaContext>>,
@@ -18,14 +19,19 @@ pub struct Nya {
 }
 
 impl Nya {
-  pub async fn run(plan: &str, configs: Vec<Value>, services: Vec<Box<dyn Service>>, initial_payload: Payload) -> Result<()> {
-    let nya = Nya::build(plan, configs, services)?;
+  pub async fn run(plan: &str, configs: Vec<Value>, services: Vec<Box<dyn Service>>, initial_payload: Payload) -> Result<(), NyaError> {
+    let nya = Nya::build(&plan, configs, services)?;
+    validate_run(
+      &plan,
+      &nya.internals.plan,
+      &nya.internals.bus
+    )?;
     nya.execute(initial_payload).await;
     Ok(())
   }
 
-  pub fn build(plan: &str, configs: Vec<Value>, services: Vec<Box<dyn Service>>) -> Result<Self> {
-    let nya_event_bus = NyaEventBus::new(services);
+  pub fn build(plan: &str, configs: Vec<Value>, services: Vec<Box<dyn Service>>) -> Result<Self, NyaError> {
+    let nya_event_bus = NyaEventBus::new(services)?;
     let ctx = NyaContext::new(configs)?;
     let plan = NyaPlan::new(plan, ctx.clone())?;
     let internals = NyaInternals {

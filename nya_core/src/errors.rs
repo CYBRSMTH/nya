@@ -12,9 +12,14 @@ pub enum NyaError {
   #[error("Wasn't able to retrieve the plan for the command {0}")]
   NyaPlanInvalidCmd(String),
   #[error("{0}")]
-  NyaServiceError(String),
-  #[error("{0}")]
-  NyaValidationError(String),
-  #[error("{0}")]
-  NyaExecutionError(String),
+  NyaPlanValidationFailure(String),
+  #[error("Service actions must be unique. More than one action was found with the event name {0}")]
+  NyaServiceActionsDuplicates(String),
+  #[error("No services or actions were provided.")]
+  NyaServiceMissingActions,
+  #[error("No service action was found for the plan {cmd:?} and step {step:?}")]
+  NyaPlanStepDoesNotExist{
+    cmd:String,
+    step: String
+  },
 }
