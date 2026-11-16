@@ -21,7 +21,7 @@ pub struct Nya {
 impl Nya {
   pub async fn run(plan: &str, configs: Vec<Value>, services: Vec<Box<dyn Service>>, initial_payload: Payload) -> Result<(), NyaError> {
     let nya = Nya::build(&plan, configs, services)?;
-    nya.execute(initial_payload).await;
+    nya.execute(initial_payload).await?;
     Ok(())
   }
 
@@ -35,7 +35,7 @@ impl Nya {
       bus: Arc::new(nya_event_bus),
       task_tracker: TaskTracker::new(),
     };
-    
+
     validate_run(
       &cmd,
       &internals.plan,
@@ -47,11 +47,12 @@ impl Nya {
     })
   }
 
-  pub async fn execute(&self, initial_payload: Payload) {
+  pub async fn execute(&self, initial_payload: Payload) -> Result<(), NyaError> {
     for step in self.internals.plan.steps.iter() {
-      self.internals.bus.clone().emit(self.clone(), step.clone(), initial_payload.clone()).await;
+      self.internals.bus.clone().emit(self.clone(), step.clone(), initial_payload.clone()).await?;
       self.internals.task_tracker.wait_all().await;
     }
+    Ok(())
   }
 
   pub async fn get(&self, key: &str) -> Value {
@@ -69,19 +70,23 @@ impl Nya {
     }
   }
 
-  pub async fn trigger(&self, event: &str, payload: Payload) {
+  pub async fn trigger(&self, event: &str, payload: Payload) -> Result<(), NyaError> {
     let nya = self.clone();
     let event_name = event.to_string();
     let handle: JoinHandle<()> = tokio::spawn(async move {
-        nya.internals.bus.emit(nya.clone(), event_name, payload).await;
+      if let Err(e) = nya.internals.bus.emit(nya.clone(), event_name, payload).await {
+        nya.log(&e.to_string()).await;
+      }
     });
     self.internals.task_tracker.add(handle).await;
+    Ok(())
   }
 
-  pub async fn trigger_all(&self, triggers: Vec<(&str, Payload)>) {
+  pub async fn trigger_all(&self, triggers: Vec<(&str, Payload)>) -> Result<(), NyaError> {
     for (event, payload) in triggers {
-      self.trigger(event, payload).await;
+      self.trigger(event, payload).await?;
     }
+    Ok(())
   }
 
   pub async fn log(&self, log: &str) {
@@ -120,7 +125,7 @@ mod nya_tests {
         .context(format!("Failed to parse {}", path.display()))?;
     let configs = vec![json];
     let nya = Nya::build("test_cmd2", configs, vec![Box::new(TestService)])?;
-    nya.execute(Payload::empty()).await;
+    nya.execute(Payload::empty()).await?;
     tokio::task::yield_now().await;
     let ctx = nya.internals.context.lock().await;
     let val1 = ctx.context.get("test_key").unwrap().as_str().unwrap();
@@ -138,7 +143,7 @@ mod nya_tests {
       .context(format!("Failed to parse {}", path.display()))?;
   let configs = vec![json];
     let nya = Nya::build("test_cmd2", configs, vec![Box::new(TestService)])?;
-    nya.execute(Payload::empty()).await;
+    nya.execute(Payload::empty()).await?;
     tokio::task::yield_now().await;
     let nya_val = &nya.get("test_key").await;
     assert_eq!("test_value", nya_val.as_str().unwrap());
@@ -173,7 +178,7 @@ mod nya_tests {
     let configs = vec![json];
     let nya = Nya::build("test_cmd2", configs, vec![Box::new(TestService)])?;
     {
-      nya.trigger("test", Payload::empty()).await;
+      nya.trigger("test", Payload::empty()).await?;
     }
     tokio::task::yield_now().await;
     let ctx = nya.internals.context.lock().await;

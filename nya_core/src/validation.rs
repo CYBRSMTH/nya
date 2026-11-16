@@ -22,7 +22,7 @@ pub fn validate_run(cmd: &str, plan: &NyaPlan, bus: &NyaEventBus) -> Result<(), 
   let plan_steps = &plan.steps;
   for step in plan_steps {
     let exists = bus.verify(step);
-    if(!exists) {
+    if !exists {
       return Err(NyaPlanStepDoesNotExist {
         cmd: cmd.to_string(),
         step: step.to_string()
