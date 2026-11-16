@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 use crate::errors::NyaError;
-use crate::errors::NyaError::{NyaServiceActionsDuplicates, NyaServiceMissingActions};
+use crate::errors::NyaError::{NyaServiceActionNotRegistered, NyaServiceActionsDuplicates, NyaServiceMissingActions};
 use crate::payload::Payload;
 use crate::service::{Action, Service};
 use crate::runtime::Nya;
@@ -39,7 +39,7 @@ impl NyaEventBus {
 #[async_trait::async_trait]
 pub trait EventBus: Send + Sync + 'static {
   fn register(&mut self, event: String, handler: Action);
-  async fn emit(&self, nya: Nya, event: String, payload: Payload);
+  async fn emit(&self, nya: Nya, event: String, payload: Payload) -> Result<(), NyaError>;
   fn verify(&self, event: &String) -> bool;
 }
 
@@ -49,9 +49,14 @@ impl EventBus for NyaEventBus {
     self.event_handlers.insert(event, handler);
   }
   
-  async fn emit(&self, nya: Nya, event: String, payload: Payload) {
-    let handler = self.event_handlers.get(&event).map(Arc::clone).unwrap();
+  async fn emit(&self, nya: Nya, event: String, payload: Payload) -> Result<(), NyaError> {
+    let handler_opt = self.event_handlers.get(&event).map(Arc::clone);
+    if handler_opt.is_none() {
+      return Err(NyaServiceActionNotRegistered)
+    }
+    let handler = handler_opt.unwrap();
     handler(nya, payload).await;
+    Ok(())
   }
   
   fn verify(&self, event: &String) -> bool {

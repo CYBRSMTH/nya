@@ -22,4 +22,7 @@ pub enum NyaError {
     cmd:String,
     step: String
   },
+  #[error("Nya received an event that did not return a registered service action.")]
+  NyaServiceActionNotRegistered,
+
 }

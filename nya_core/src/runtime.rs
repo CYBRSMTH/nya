@@ -21,25 +21,26 @@ pub struct Nya {
 impl Nya {
   pub async fn run(plan: &str, configs: Vec<Value>, services: Vec<Box<dyn Service>>, initial_payload: Payload) -> Result<(), NyaError> {
     let nya = Nya::build(&plan, configs, services)?;
-    validate_run(
-      &plan,
-      &nya.internals.plan,
-      &nya.internals.bus
-    )?;
     nya.execute(initial_payload).await;
     Ok(())
   }
 
-  pub fn build(plan: &str, configs: Vec<Value>, services: Vec<Box<dyn Service>>) -> Result<Self, NyaError> {
+  pub fn build(cmd: &str, configs: Vec<Value>, services: Vec<Box<dyn Service>>) -> Result<Self, NyaError> {
     let nya_event_bus = NyaEventBus::new(services)?;
     let ctx = NyaContext::new(configs)?;
-    let plan = NyaPlan::new(plan, ctx.clone())?;
+    let plan = NyaPlan::new(&cmd, ctx.clone())?;
     let internals = NyaInternals {
       context: Arc::new(Mutex::new(ctx)),
       plan,
       bus: Arc::new(nya_event_bus),
       task_tracker: TaskTracker::new(),
     };
+    
+    validate_run(
+      &cmd,
+      &internals.plan,
+      &internals.bus
+    )?;
 
     Ok(Self {
       internals: Arc::new(internals)
