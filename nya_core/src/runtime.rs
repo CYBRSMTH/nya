@@ -48,11 +48,9 @@ impl Nya {
   }
 
   pub async fn execute(&self, initial_payload: Payload) -> Result<(), NyaError> {
-    let mut steps = self.internals.plan.steps.clone();
-    let first_step = steps.remove(0);
-    self.internals.bus.clone().emit(self.clone(), first_step, initial_payload).await?;
-    for step in steps.iter() {
-      self.internals.bus.clone().emit(self.clone(), step.clone(), Payload::empty()).await?;
+    let mut payload = initial_payload;
+    for step in self.internals.plan.steps.iter() {
+      self.internals.bus.emit(self.clone(), step.clone(), std::mem::take(&mut payload)).await?;
       self.internals.task_tracker.wait_all().await;
     }
     Ok(())
