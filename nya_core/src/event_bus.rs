@@ -52,7 +52,7 @@ impl EventBus for NyaEventBus {
   async fn emit(&self, nya: Nya, event: String, payload: Payload) -> Result<(), NyaError> {
     let handler_opt = self.event_handlers.get(&event).map(Arc::clone);
     if handler_opt.is_none() {
-      return Err(NyaServiceActionNotRegistered)
+      return Err(NyaServiceActionNotRegistered(event))
     }
     let handler = handler_opt.unwrap();
     handler(nya, payload).await;
@@ -130,7 +130,7 @@ use crate::{
     }
     tokio::task::yield_now().await;
     assert!(emit_result.is_err());
-    assert!(matches!( emit_result.unwrap_err(), NyaError::NyaServiceActionNotRegistered));
+    assert!(matches!( emit_result.unwrap_err(), NyaError::NyaServiceActionNotRegistered(_)));
     Ok(())
   }
 }

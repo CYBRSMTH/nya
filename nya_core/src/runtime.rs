@@ -70,7 +70,7 @@ impl Nya {
     }
   }
 
-  pub async fn trigger(&self, event: &str, payload: Payload) -> Result<(), NyaError> {
+  pub async fn trigger(&self, event: &str, payload: Payload) {
     let nya = self.clone();
     let event_name = event.to_string();
     let handle: JoinHandle<()> = tokio::spawn(async move {
@@ -79,14 +79,12 @@ impl Nya {
       }
     });
     self.internals.task_tracker.add(handle).await;
-    Ok(())
   }
 
-  pub async fn trigger_all(&self, triggers: Vec<(&str, Payload)>) -> Result<(), NyaError> {
+  pub async fn trigger_all(&self, triggers: Vec<(&str, Payload)>) {
     for (event, payload) in triggers {
-      self.trigger(event, payload).await?;
+      self.trigger(event, payload).await;
     }
-    Ok(())
   }
 
   pub async fn log(&self, log: &str) {
