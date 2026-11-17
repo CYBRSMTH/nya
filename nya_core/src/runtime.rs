@@ -111,7 +111,7 @@ mod nya_tests {
     let json: Value = serde_json::from_str(&content)
         .context(format!("Failed to parse {}", path.display()))?;
     let configs = vec![json];
-    let _ = Nya::build("test_cmd", configs,vec![Box::new(TestService)]).unwrap();
+    let _ = Nya::build("test_cmd2", configs,vec![Box::new(TestService)])?;
     Ok(())
   }
 

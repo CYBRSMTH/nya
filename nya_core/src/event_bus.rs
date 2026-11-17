@@ -20,11 +20,11 @@ impl NyaEventBus {
     for service in reg.iter() {
       service_handlers.extend(service.actions());
     }
-    
+
     if service_handlers.is_empty() {
       return Err(NyaServiceMissingActions);
     }
-    
+
     for handler in service_handlers {
       let existing_handler =  &new_bus.event_handlers.get(&handler.0);
       if !existing_handler.is_none() {
@@ -58,7 +58,7 @@ impl EventBus for NyaEventBus {
     handler(nya, payload).await;
     Ok(())
   }
-  
+
   fn verify(&self, event: &String) -> bool {
     let handler = self.event_handlers.get(event);
     handler.is_some()
@@ -79,6 +79,7 @@ use crate::{
           service_tests::TestService, Service
         }
     }, runtime::Nya};
+  use crate::errors::NyaError;
 
   fn get_test_services() -> Vec<Box<dyn Service>> {
     vec![Box::new(TestService)]
@@ -101,9 +102,9 @@ use crate::{
         .context(format!("Failed to parse {}", path.display()))?;
     let configs = vec![json];
     let event_bus = NyaEventBus::new(get_test_services())?;
-    let test_nya = Nya::build("test_cmd", configs, vec![Box::new(TestService)])?;
+    let test_nya = Nya::build("test_cmd2", configs, vec![Box::new(TestService)])?;
     {
-      event_bus.emit(test_nya.clone(), "test".to_string(), Payload::empty()).await;
+      event_bus.emit(test_nya.clone(), "test".to_string(), Payload::empty()).await?;
     }
     tokio::task::yield_now().await;
     let ctx_val = test_nya.get("test_key").await;
@@ -122,13 +123,14 @@ use crate::{
         .context(format!("Failed to parse {}", path.display()))?;
     let configs = vec![json];
     let event_bus = NyaEventBus::new(get_test_services())?;
-    let test_nya = Nya::build("test_cmd", configs, vec![Box::new(TestService)])?;
+    let test_nya = Nya::build("test_cmd2", configs, vec![Box::new(TestService)])?;
+    let emit_result ;
     {
-      event_bus.emit(test_nya.clone(), "fake_event".to_string(), Payload::empty()).await;
+      emit_result = event_bus.emit(test_nya.clone(), "fake_event".to_string(), Payload::empty()).await;
     }
     tokio::task::yield_now().await;
-    let ctx_val = test_nya.get("test_key").await;
-    assert_eq!(Value::Null, ctx_val);
+    assert!(emit_result.is_err());
+    assert!(matches!( emit_result.unwrap_err(), NyaError::NyaServiceActionNotRegistered));
     Ok(())
   }
 }
