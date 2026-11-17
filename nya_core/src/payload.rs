@@ -1,5 +1,6 @@
 use std::{any::{Any, type_name}, sync::Arc};
-use anyhow::{Context, Result, anyhow};
+use crate::errors::NyaError;
+use crate::errors::NyaError::NyaPayloadError;
 
 #[derive(Clone, Default)]
 pub struct Payload {
@@ -33,7 +34,7 @@ pub trait Get {
 }
 
 pub trait Take {
-    fn take<T: Any + Send + Sync + 'static>(self) -> Result<T>
+    fn take<T: Any + Send + Sync + 'static>(self) -> Result<T, NyaError>
     where
         Self: Sized;
 }
@@ -61,13 +62,17 @@ impl Get for Payload {
 }
 
 impl Take for Payload {
-    fn take<T: Any + Send + Sync + 'static>(self) -> Result<T> {
-        let arc = self.value.context("Couldn't get the value from payload")?;
+    fn take<T: Any + Send + Sync + 'static>(self) -> Result<T, NyaError> {
+        let arc_result = self.value;
+        if arc_result.is_none() {
+          return Err(NyaPayloadError("Couldn't get the value from payload".to_string()));
+        }
+        let arc = arc_result.unwrap();
         // Downcast Arc<dyn Any> → Arc<T> first (T is Sized)
         let arc_t = arc.downcast::<T>()
-            .map_err(|_| anyhow!("Could not get the value because the types mismatched"))?;
+            .map_err(|_| NyaPayloadError("Could not get the value because the types mismatched".to_string()))?;
         // Now try_unwrap works because Arc<T> where T: Sized is fine
 
-      Ok(Arc::try_unwrap(arc_t).map_err(|_| anyhow!("Couldn't create the Arc because value is already shared"))?)
+      Ok(Arc::try_unwrap(arc_t).map_err(|_| NyaPayloadError("Couldn't create the Arc because value is already shared".to_string()))?)
     }
 }

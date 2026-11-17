@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use crate::context::NyaContext;
 use crate::errors::NyaError;
-use crate::errors::NyaError::{NyaPlanInvalidCmd, NyaPlansMissing, NyaPlanParseFailed};
+use crate::errors::NyaError::{PlanInvalidCmd, PlansMissing, PlanParseFailed};
 use crate::validation::validate_plans;
 
 type NyaPlanSteps = Vec<String>;
@@ -25,12 +25,12 @@ impl NyaPlan {
 
 fn get_plan(cmd: &str, ctx: NyaContext) -> Result<NyaPlanSteps, NyaError> {
   let ctx_plans_value = ctx.context.get("plans")
-      .ok_or_else(|| NyaPlansMissing)?;
+      .ok_or_else(|| PlansMissing)?;
   let mut plans = NyaPlans::deserialize(ctx_plans_value)
-      .map_err(|e| NyaPlanParseFailed(e))?;
+      .map_err(|e| PlanParseFailed(e))?;
   validate_plans(&plans)?;
   let plan = plans.remove(cmd)
-      .ok_or_else(|| NyaPlanInvalidCmd(cmd.to_string()))?;
+      .ok_or_else(|| PlanInvalidCmd(cmd.to_string()))?;
   Ok(plan.steps)
 }
 
@@ -72,7 +72,7 @@ mod plan_tests {
       let result = NyaPlan::new("nonexistent", nya_context);
 
       assert!(result.is_err());
-      assert!(matches!(result.unwrap_err(), NyaError::NyaPlanInvalidCmd(_)));
+      assert!(matches!(result.unwrap_err(), NyaError::PlanInvalidCmd(_)));
       Ok(())
     }
 
@@ -87,7 +87,7 @@ mod plan_tests {
     let nya_context = NyaContext::new(vec![json])?;
     let result = NyaPlan::new("test_cmd", nya_context);
     assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), NyaError::NyaPlansMissing));
+    assert!(matches!(result.unwrap_err(), NyaError::PlansMissing));
     Ok(())
   }
 
@@ -102,7 +102,7 @@ mod plan_tests {
     let nya_context = NyaContext::new(vec![json])?;
     let result = NyaPlan::new("test_cmd", nya_context);
     assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), NyaError::NyaPlanParseFailed(_)));
+    assert!(matches!(result.unwrap_err(), NyaError::PlanParseFailed(_)));
     Ok(())
   }
 
@@ -117,7 +117,7 @@ mod plan_tests {
     let nya_context = NyaContext::new(vec![json])?;
     let result = NyaPlan::new("test_cmd", nya_context);
     assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), NyaError::NyaPlanValidationFailure(_)));
+    assert!(matches!(result.unwrap_err(), NyaError::PlanValidationFailure(_)));
     Ok(())
   }
 
@@ -132,7 +132,7 @@ mod plan_tests {
     let nya_context = NyaContext::new(vec![json])?;
     let result = NyaPlan::new("test_cmd", nya_context);
     assert!(result.is_err());
-    assert!(matches!(result.unwrap_err(), NyaError::NyaPlanValidationFailure(_)));
+    assert!(matches!(result.unwrap_err(), NyaError::PlanValidationFailure(_)));
     Ok(())
   }
 

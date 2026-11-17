@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use serde_json::{Value, Map};
 use crate::errors::NyaError;
-use crate::errors::NyaError::NyaContextInvalidType;
+use crate::errors::NyaError::ContextInvalidType;
 
 #[derive(Clone, Debug)]
 pub struct NyaContext {
@@ -24,7 +24,7 @@ impl NyaContext {
       });
 
     if invalid_config {
-      return Err(NyaContextInvalidType);
+      return Err(ContextInvalidType);
     }
 
     Ok(Self {
@@ -102,7 +102,7 @@ mod context_tests {
         .context(format!("Failed to parse {}", path.display()))?;
     let nya_context = NyaContext::new(vec![json]);
 
-    assert!(matches!(nya_context.unwrap_err(), NyaError::NyaContextInvalidType));
+    assert!(matches!(nya_context.unwrap_err(), NyaError::ContextInvalidType));
     Ok(())
   }
 }

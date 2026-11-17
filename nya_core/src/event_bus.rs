@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 use crate::errors::NyaError;
-use crate::errors::NyaError::{NyaServiceActionNotRegistered, NyaServiceActionsDuplicates, NyaServiceMissingActions};
+use crate::errors::NyaError::{ServiceActionNotRegistered, ServiceActionsDuplicates, ServiceMissingActions};
 use crate::payload::Payload;
 use crate::service::{Action, Service};
 use crate::runtime::Nya;
@@ -22,13 +22,13 @@ impl NyaEventBus {
     }
 
     if service_handlers.is_empty() {
-      return Err(NyaServiceMissingActions);
+      return Err(ServiceMissingActions);
     }
 
     for handler in service_handlers {
       let existing_handler =  &new_bus.event_handlers.get(&handler.0);
       if !existing_handler.is_none() {
-        return Err(NyaServiceActionsDuplicates(handler.0.clone()));
+        return Err(ServiceActionsDuplicates(handler.0.clone()));
       }
       new_bus.register(handler.0, handler.1);
     }
@@ -50,12 +50,11 @@ impl EventBus for NyaEventBus {
   }
   
   async fn emit(&self, nya: Nya, event: String, payload: Payload) -> Result<(), NyaError> {
-    let handler_opt = self.event_handlers.get(&event).map(Arc::clone);
-    if handler_opt.is_none() {
-      return Err(NyaServiceActionNotRegistered(event))
+    if let Some(handler) = self.event_handlers.get(&event).map(Arc::clone) {
+      handler(nya, payload).await;
+    } else {
+      return Err(ServiceActionNotRegistered(event))
     }
-    let handler = handler_opt.unwrap();
-    handler(nya, payload).await;
     Ok(())
   }
 
@@ -130,7 +129,7 @@ use crate::{
     }
     tokio::task::yield_now().await;
     assert!(emit_result.is_err());
-    assert!(matches!( emit_result.unwrap_err(), NyaError::NyaServiceActionNotRegistered(_)));
+    assert!(matches!( emit_result.unwrap_err(), NyaError::ServiceActionNotRegistered(_)));
     Ok(())
   }
 }

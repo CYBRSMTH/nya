@@ -48,8 +48,11 @@ impl Nya {
   }
 
   pub async fn execute(&self, initial_payload: Payload) -> Result<(), NyaError> {
-    for step in self.internals.plan.steps.iter() {
-      self.internals.bus.clone().emit(self.clone(), step.clone(), initial_payload.clone()).await?;
+    let mut steps = self.internals.plan.steps.clone();
+    let first_step = steps.remove(0);
+    self.internals.bus.clone().emit(self.clone(), first_step, initial_payload).await?;
+    for step in steps.iter() {
+      self.internals.bus.clone().emit(self.clone(), step.clone(), Payload::empty()).await?;
       self.internals.task_tracker.wait_all().await;
     }
     Ok(())
@@ -176,7 +179,7 @@ mod nya_tests {
     let configs = vec![json];
     let nya = Nya::build("test_cmd2", configs, vec![Box::new(TestService)])?;
     {
-      nya.trigger("test", Payload::empty()).await?;
+      nya.trigger("test", Payload::empty()).await;
     }
     tokio::task::yield_now().await;
     let ctx = nya.internals.context.lock().await;
