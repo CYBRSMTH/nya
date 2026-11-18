@@ -97,9 +97,10 @@ impl Nya {
 mod nya_tests {
   use std::fs::read_to_string;
   use std::path::PathBuf;
-  use crate::{payload::Payload, service::service_tests::TestService, runtime::Nya};
+  use crate::{payload::Payload, runtime::Nya};
   use anyhow::{Context, Result};
   use serde_json::Value;
+  use crate::test_utils::TestService;
 
   #[test]
   fn can_build_nya() -> Result<()> {

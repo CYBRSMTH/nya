@@ -70,15 +70,9 @@ mod event_bus_tests{
   use std::path::PathBuf;
   use serde_json::{from_value, Value};
   use anyhow::{Context, Result};
-
-use crate::{
-    {
-      event_bus::{EventBus, NyaEventBus}, payload::Payload, service::
-        {
-          service_tests::TestService, Service
-        }
-    }, runtime::Nya};
+  use crate::{{event_bus::{EventBus, NyaEventBus}, payload::Payload, service::Service}, runtime::Nya};
   use crate::errors::NyaError;
+  use crate::test_utils::TestService;
 
   fn get_test_services() -> Vec<Box<dyn Service>> {
     vec![Box::new(TestService)]
