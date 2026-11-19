@@ -1,5 +1,4 @@
 use std::fs::read_to_string;
-use std::io::Empty;
 use std::path::PathBuf;
 use anyhow::{Context, Result};
 use serde_json::Value;
@@ -33,8 +32,8 @@ pub fn get_config(config: NyaTestConfigs) -> Result<Value> {
   let path = PathBuf::from(path_str);
   let content = read_to_string(&path)
       .context(format!("Failed to read context file '{}'", path.display()))?;
-  Ok(serde_json::from_str(&content)
-      .context(format!("Failed to parse {}", path.display()))?)
+  serde_json::from_str(&content)
+      .context(format!("Failed to parse {}", path.display()))
 }
 
 pub(crate) async fn test_fn(nya: Nya, _: Payload) {
@@ -67,10 +66,7 @@ impl Service for EmptyService {
 pub(crate) fn get_test_nya(configs: Vec<NyaTestConfigs>) -> Result<Nya> {
   let configs = configs
       .into_iter()
-      .fold(vec![] , |mut acc, config| {
-          acc.extend(get_config(config));
-          acc
-        }
-      );
+      .map(get_config)
+      .collect::<Result<Vec<Value>>>()?;
   Ok(Nya::build("cmd1", configs, vec![Box::new(TestService)])?)
 }

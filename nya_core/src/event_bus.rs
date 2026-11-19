@@ -113,7 +113,6 @@ mod event_bus_tests{
       emit_result = event_bus.emit(test_nya.clone(), "fake_event".to_string(), Payload::empty()).await;
     }
     tokio::task::yield_now().await;
-    assert!(emit_result.is_err());
     assert!(matches!( emit_result.unwrap_err(), NyaError::ServiceActionNotRegistered(_)));
     Ok(())
   }
@@ -121,7 +120,6 @@ mod event_bus_tests{
   #[tokio::test]
   async fn event_bus_returns_error_when_service_is_empty() -> Result<()> {
     let bus_result = NyaEventBus::new(get_empty_service());
-    assert!(bus_result.is_err());
     assert!(matches!(bus_result, Err(NyaError::ServiceMissingActions)));
     Ok(())
   }
