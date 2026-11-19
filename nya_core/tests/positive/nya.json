@@ -1,8 +1,6 @@
 {
-  "context": {
-    "context_key1": "context_value1",
-    "context_key2": "context_value1"
-  },
+  "context_key1": "context_value1",
+  "context_key2": "context_value1",
   "plans": {
     "cmd1": {
       "steps": [

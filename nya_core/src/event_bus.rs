@@ -66,16 +66,17 @@ impl EventBus for NyaEventBus {
 
 #[cfg(test)]
 mod event_bus_tests{
-  use std::fs::read_to_string;
-  use std::path::PathBuf;
-  use serde_json::{from_value, Value};
-  use anyhow::{Context, Result};
+  use serde_json::from_value;
+  use anyhow::Result;
   use crate::{{event_bus::{EventBus, NyaEventBus}, payload::Payload, service::Service}, runtime::Nya};
   use crate::errors::NyaError;
-  use crate::test_utils::TestService;
+  use crate::test_utils::{get_config, EmptyService, NyaTestConfigs, TestService};
 
   fn get_test_services() -> Vec<Box<dyn Service>> {
     vec![Box::new(TestService)]
+  }
+  fn get_empty_service() -> Vec<Box<dyn Service>> {
+    vec![Box::new(EmptyService)]
   }
 
   #[tokio::test]
@@ -87,36 +88,26 @@ mod event_bus_tests{
 
   #[tokio::test]
   async fn event_bus_can_run_handlers_on_event() -> Result<()> {
-    let path = PathBuf::from("./tests/nya_test_config.json");
-    let content = read_to_string(&path)
-        .context(format!("Failed to read context file '{}'", path.display()))?;
-
-    let json: Value = serde_json::from_str(&content)
-        .context(format!("Failed to parse {}", path.display()))?;
-    let configs = vec![json];
+    let config = get_config(NyaTestConfigs::NyaConfig)?;
+    let configs = vec![config];
     let event_bus = NyaEventBus::new(get_test_services())?;
-    let test_nya = Nya::build("test_cmd2", configs, vec![Box::new(TestService)])?;
+    let test_nya = Nya::build("cmd1", configs, vec![Box::new(TestService)])?;
     {
-      event_bus.emit(test_nya.clone(), "test".to_string(), Payload::empty()).await?;
+      event_bus.emit(test_nya.clone(), "event1".to_string(), Payload::empty()).await?;
     }
     tokio::task::yield_now().await;
-    let ctx_val = test_nya.get("test_key").await;
+    let ctx_val = test_nya.get("key1").await;
     let value: String = from_value(ctx_val.clone())?;
-    assert_eq!(value, "test_value".to_string());
+    assert_eq!(value, "value1".to_string());
     Ok(())
   }
 
   #[tokio::test]
   async fn event_bus_doesnt_run_if_theres_no_event() -> Result<()> {
-    let path = PathBuf::from("./tests/nya_test_config.json");
-    let content = read_to_string(&path)
-        .context(format!("Failed to read context file '{}'", path.display()))?;
-
-    let json: Value = serde_json::from_str(&content)
-        .context(format!("Failed to parse {}", path.display()))?;
-    let configs = vec![json];
+    let config = get_config(NyaTestConfigs::NyaConfig)?;
+    let configs = vec![config];
     let event_bus = NyaEventBus::new(get_test_services())?;
-    let test_nya = Nya::build("test_cmd2", configs, vec![Box::new(TestService)])?;
+    let test_nya = Nya::build("cmd1", configs, vec![Box::new(TestService)])?;
     let emit_result ;
     {
       emit_result = event_bus.emit(test_nya.clone(), "fake_event".to_string(), Payload::empty()).await;
@@ -124,6 +115,14 @@ mod event_bus_tests{
     tokio::task::yield_now().await;
     assert!(emit_result.is_err());
     assert!(matches!( emit_result.unwrap_err(), NyaError::ServiceActionNotRegistered(_)));
+    Ok(())
+  }
+
+  #[tokio::test]
+  async fn event_bus_returns_error_when_service_is_empty() -> Result<()> {
+    let bus_result = NyaEventBus::new(get_empty_service());
+    assert!(bus_result.is_err());
+    assert!(matches!(bus_result, Err(NyaError::ServiceMissingActions)));
     Ok(())
   }
 }

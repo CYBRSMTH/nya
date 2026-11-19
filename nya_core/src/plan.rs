@@ -36,41 +36,27 @@ fn get_plan(cmd: &str, ctx: NyaContext) -> Result<NyaPlanSteps, NyaError> {
 
 #[cfg(test)]
 mod plan_tests {
-  use std::fs::read_to_string;
-  use std::path::PathBuf;
   use crate::context::NyaContext;
   use crate::plan::NyaPlan;
-  use anyhow::{Context, Result};
-  use serde_json::Value;
+  use anyhow::Result;
   use crate::errors::NyaError;
+  use crate::test_utils::{get_config, NyaTestConfigs};
 
   #[test]
     fn can_get_plan() -> Result<()> {
-    let path = PathBuf::from("./tests/nya_test_config.json");
-    let content = read_to_string(&path)
-        .context(format!("Failed to read context file '{}'", path.display()))?;
-
-    let json: Value = serde_json::from_str(&content)
-        .context(format!("Failed to parse {}", path.display()))?;
-      let nya_context = NyaContext::new(vec![json])?;
-
-      let found = NyaPlan::new("test_cmd", nya_context)?;
-      let steps_len: usize = 2;
+      let config = get_config(NyaTestConfigs::NyaConfig)?;
+      let nya_context = NyaContext::new(vec![config])?;
+      let found = NyaPlan::new("cmd1", nya_context)?;
+      let steps_len: usize = 1;
       assert_eq!(found.steps.len(), steps_len);
       Ok(())
     }
   
     #[test]
     fn returns_error_for_nonexistent_plan() -> Result<()> {
-      let path = PathBuf::from("./tests/nya_test_config.json");
-      let content = read_to_string(&path)
-          .context(format!("Failed to read context file '{}'", path.display()))?;
-
-      let json: Value = serde_json::from_str(&content)
-          .context(format!("Failed to parse {}", path.display()))?;
-      let nya_context = NyaContext::new(vec![json])?;
+      let config = get_config(NyaTestConfigs::NyaConfig)?;
+      let nya_context = NyaContext::new(vec![config])?;
       let result = NyaPlan::new("nonexistent", nya_context);
-
       assert!(result.is_err());
       assert!(matches!(result.unwrap_err(), NyaError::PlanInvalidCmd(_)));
       Ok(())
@@ -78,14 +64,9 @@ mod plan_tests {
 
   #[test]
   fn returns_error_if_plans_dont_exist() -> Result<()> {
-    let path = PathBuf::from("./tests/nya_test_no_plans.json");
-    let content = read_to_string(&path)
-        .context(format!("Failed to read context file '{}'", path.display()))?;
-
-    let json: Value = serde_json::from_str(&content)
-        .context(format!("Failed to parse {}", path.display()))?;
-    let nya_context = NyaContext::new(vec![json])?;
-    let result = NyaPlan::new("test_cmd", nya_context);
+    let config = get_config(NyaTestConfigs::NyaConfigNoPlans)?;
+    let nya_context = NyaContext::new(vec![config])?;
+    let result = NyaPlan::new("cmd1", nya_context);
     assert!(result.is_err());
     assert!(matches!(result.unwrap_err(), NyaError::PlansMissing));
     Ok(())
@@ -93,14 +74,9 @@ mod plan_tests {
 
   #[test]
   fn returns_error_when_json_parsing_fails() -> Result<()> {
-    let path = PathBuf::from("./tests/nya_test_plans_invalid_json.json");
-    let content = read_to_string(&path)
-        .context(format!("Failed to read context file '{}'", path.display()))?;
-
-    let json: Value = serde_json::from_str(&content)
-        .context(format!("Failed to parse {}", path.display()))?;
-    let nya_context = NyaContext::new(vec![json])?;
-    let result = NyaPlan::new("test_cmd", nya_context);
+    let config = get_config(NyaTestConfigs::NyaConfigPlansInvalidJSON)?;
+    let nya_context = NyaContext::new(vec![config])?;
+    let result = NyaPlan::new("cmd1", nya_context);
     assert!(result.is_err());
     assert!(matches!(result.unwrap_err(), NyaError::PlanParseFailed(_)));
     Ok(())
@@ -108,13 +84,8 @@ mod plan_tests {
 
   #[test]
   fn returns_error_when_plan_key_is_missing() -> Result<()> {
-    let path = PathBuf::from("./tests/nya_test_plans_invalid_no_key.json");
-    let content = read_to_string(&path)
-        .context(format!("Failed to read context file '{}'", path.display()))?;
-
-    let json: Value = serde_json::from_str(&content)
-        .context(format!("Failed to parse {}", path.display()))?;
-    let nya_context = NyaContext::new(vec![json])?;
+    let config = get_config(NyaTestConfigs::NyaConfigPlansInvalidNoKey)?;
+    let nya_context = NyaContext::new(vec![config])?;
     let result = NyaPlan::new("test_cmd", nya_context);
     assert!(result.is_err());
     assert!(matches!(result.unwrap_err(), NyaError::PlanValidationFailure(_)));
@@ -123,13 +94,8 @@ mod plan_tests {
 
   #[test]
   fn returns_error_when_plan_steps_are_missing() -> Result<()> {
-    let path = PathBuf::from("./tests/nya_test_plans_invalid_no_steps.json");
-    let content = read_to_string(&path)
-        .context(format!("Failed to read context file '{}'", path.display()))?;
-
-    let json: Value = serde_json::from_str(&content)
-        .context(format!("Failed to parse {}", path.display()))?;
-    let nya_context = NyaContext::new(vec![json])?;
+    let config = get_config(NyaTestConfigs::NyaConfigPlansInvalidNoSteps)?;
+    let nya_context = NyaContext::new(vec![config])?;
     let result = NyaPlan::new("test_cmd", nya_context);
     assert!(result.is_err());
     assert!(matches!(result.unwrap_err(), NyaError::PlanValidationFailure(_)));
