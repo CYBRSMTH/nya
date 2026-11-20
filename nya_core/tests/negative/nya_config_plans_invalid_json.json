@@ -1,0 +1,7 @@
+{
+  "plans": {
+    "test_cmd": {
+      "steps": "test_event"
+    }
+  }
+}

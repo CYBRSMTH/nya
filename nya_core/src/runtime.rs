@@ -3,7 +3,8 @@ use serde::Serialize;
 use serde_json::Value;
 use tokio::{sync::Mutex, task::JoinHandle};
 use crate::{context::NyaContext, event_bus::{EventBus, NyaEventBus}, payload::Payload, plan::NyaPlan, service::Service, task_tracker::TaskTracker};
-use anyhow::{Result};
+use crate::errors::NyaError;
+use crate::validation::validate_run;
 
 struct NyaInternals {
   context: Arc<Mutex<NyaContext>>,
@@ -18,16 +19,16 @@ pub struct Nya {
 }
 
 impl Nya {
-  pub async fn run(plan: &str, configs: Vec<Value>, services: Vec<Box<dyn Service>>, initial_payload: Payload) -> Result<()> {
-    let nya = Nya::build(plan, configs, services, initial_payload)?;
-    nya.execute().await;
+  pub async fn run(plan: &str, configs: Vec<Value>, services: Vec<Box<dyn Service>>, initial_payload: Payload) -> Result<(), NyaError> {
+    let nya = Nya::build(&plan, configs, services)?;
+    nya.execute(initial_payload).await?;
     Ok(())
   }
 
-  pub fn build(plan: &str, configs: Vec<Value>, services: Vec<Box<dyn Service>>, initial_payload: Payload) -> Result<Self> {
-    let nya_event_bus = NyaEventBus::new(services);
-    let ctx = NyaContext::new(configs, initial_payload)?;
-    let plan = NyaPlan::new(plan, ctx.clone())?;
+  pub fn build(cmd: &str, configs: Vec<Value>, services: Vec<Box<dyn Service>>) -> Result<Self, NyaError> {
+    let nya_event_bus = NyaEventBus::new(services)?;
+    let ctx = NyaContext::new(configs)?;
+    let plan = NyaPlan::new(&cmd, ctx.clone())?;
     let internals = NyaInternals {
       context: Arc::new(Mutex::new(ctx)),
       plan,
@@ -35,16 +36,24 @@ impl Nya {
       task_tracker: TaskTracker::new(),
     };
 
+    validate_run(
+      &cmd,
+      &internals.plan,
+      &internals.bus
+    )?;
+
     Ok(Self {
       internals: Arc::new(internals)
     })
   }
 
-  pub async fn execute(&self) {
+  pub async fn execute(&self, initial_payload: Payload) -> Result<(), NyaError> {
+    let mut payload = initial_payload;
     for step in self.internals.plan.steps.iter() {
-      self.internals.bus.clone().emit(self.clone(), step.clone(), Payload::empty()).await;
+      self.internals.bus.emit(self.clone(), step.clone(), std::mem::take(&mut payload)).await?;
       self.internals.task_tracker.wait_all().await;
     }
+    Ok(())
   }
 
   pub async fn get(&self, key: &str) -> Value {
@@ -66,7 +75,9 @@ impl Nya {
     let nya = self.clone();
     let event_name = event.to_string();
     let handle: JoinHandle<()> = tokio::spawn(async move {
-        nya.internals.bus.emit(nya.clone(), event_name, payload).await;
+      if let Err(e) = nya.internals.bus.emit(nya.clone(), event_name, payload).await {
+        nya.log(&e.to_string()).await;
+      }
     });
     self.internals.task_tracker.add(handle).await;
   }
@@ -84,70 +95,48 @@ impl Nya {
 
 #[cfg(test)]
 mod nya_tests {
-  use std::fs::read_to_string;
-  use std::path::PathBuf;
-  use crate::{payload::Payload, service::service_tests::TestService, runtime::Nya};
-  use anyhow::{Context, Result};
-  use serde_json::Value;
+  use crate::{payload::Payload, runtime::Nya};
+  use anyhow::Result;
+  use crate::errors::NyaError::PlanStepDoesNotExist;
+  use crate::test_utils::{get_config, NyaTestConfigs, TestService};
 
   #[test]
   fn can_build_nya() -> Result<()> {
-    let path = PathBuf::from("./tests/nya_test_config.json");
-    let content = read_to_string(&path)
-        .context(format!("Failed to read context file '{}'", path.display()))?;
-
-    let json: Value = serde_json::from_str(&content)
-        .context(format!("Failed to parse {}", path.display()))?;
-    let configs = vec![json];
-    let _ = Nya::build("test_cmd", configs,vec![Box::new(TestService)], Payload::empty()).unwrap();
+    let config = get_config(NyaTestConfigs::NyaConfig)?;
+    let _ = Nya::build("cmd1", vec![config],vec![Box::new(TestService)])?;
     Ok(())
   }
 
   #[tokio::test]
   async fn can_run_nya_schema() -> Result<()> {
-    let path = PathBuf::from("./tests/nya_test_config.json");
-    let content = read_to_string(&path)
-        .context(format!("Failed to read context file '{}'", path.display()))?;
-
-    let json: Value = serde_json::from_str(&content)
-        .context(format!("Failed to parse {}", path.display()))?;
-    let configs = vec![json];
-    let nya = Nya::build("test_cmd2", configs, vec![Box::new(TestService)], Payload::empty())?;
-    nya.execute().await;
+    let config = get_config(NyaTestConfigs::NyaConfig)?;
+    let nya = Nya::build("cmd2", vec![config], vec![Box::new(TestService)])?;
+    {
+      nya.execute(Payload::empty()).await?;
+    }
     tokio::task::yield_now().await;
     let ctx = nya.internals.context.lock().await;
-    let val1 = ctx.context.get("test_key").unwrap().as_str().unwrap();
-    assert_eq!("test_value", val1);
+    let val1 = ctx.context.get("key1").unwrap().as_str().unwrap();
+    let val2 = ctx.context.get("key2").unwrap().as_str().unwrap();
+    assert_eq!("value1", val1);
+    assert_eq!("value2", val2);
     Ok(())
   }
 
 #[tokio::test]
-  async fn can_get_value_from_nya() -> Result<()>{
-  let path = PathBuf::from("./tests/nya_test_config.json");
-  let content = read_to_string(&path)
-      .context(format!("Failed to read context file '{}'", path.display()))?;
-
-  let json: Value = serde_json::from_str(&content)
-      .context(format!("Failed to parse {}", path.display()))?;
-  let configs = vec![json];
-    let nya = Nya::build("test_cmd2", configs, vec![Box::new(TestService)], Payload::empty())?;
-    nya.execute().await;
-    tokio::task::yield_now().await;
-    let nya_val = &nya.get("test_key").await;
-    assert_eq!("test_value", nya_val.as_str().unwrap());
-  Ok(())
+  async fn can_get_value_from_nya() -> Result<()> {
+    let config = get_config(NyaTestConfigs::NyaConfig)?;
+    let nya = Nya::build("cmd1", vec![config], vec![Box::new(TestService)])?;
+    nya.execute(Payload::empty()).await?;
+    let nya_val = &nya.get("key1").await;
+    assert_eq!("value1", nya_val.as_str().unwrap());
+    Ok(())
   }
 
   #[tokio::test]
-  async fn can_set_value_on_nya() -> Result<()>{
-    let path = PathBuf::from("./tests/nya_test_config.json");
-    let content = read_to_string(&path)
-        .context(format!("Failed to read context file '{}'", path.display()))?;
-
-    let json: Value = serde_json::from_str(&content)
-        .context(format!("Failed to parse {}", path.display()))?;
-    let configs = vec![json];
-    let nya = Nya::build("test_cmd2", configs, vec![Box::new(TestService)], Payload::empty())?;
+  async fn can_set_value_on_nya() -> Result<()> {
+    let config = get_config(NyaTestConfigs::NyaConfig)?;
+    let nya = Nya::build("cmd1", vec![config], vec![Box::new(TestService)])?;
     let _ = &nya.set("test_key", "test_value").await;
     let nya_val = &nya.get("test_key").await;
     let val1 = nya_val.as_str().unwrap();
@@ -156,22 +145,24 @@ mod nya_tests {
   }
 
   #[tokio::test]
-  async fn can_trigger_nya_event() -> Result<()>{
-    let path = PathBuf::from("./tests/nya_test_config.json");
-    let content = read_to_string(&path)
-        .context(format!("Failed to read context file '{}'", path.display()))?;
-
-    let json: Value = serde_json::from_str(&content)
-        .context(format!("Failed to parse {}", path.display()))?;
-    let configs = vec![json];
-    let nya = Nya::build("test_cmd2", configs, vec![Box::new(TestService)], Payload::empty())?;
+  async fn can_trigger_nya_event() -> Result<()> {
+    let config = get_config(NyaTestConfigs::NyaConfig)?;
+    let nya = Nya::build("cmd1", vec![config], vec![Box::new(TestService)])?;
     {
-      nya.trigger("test", Payload::empty()).await;
+      nya.trigger("event1", Payload::empty()).await;
     }
     tokio::task::yield_now().await;
     let ctx = nya.internals.context.lock().await;
-    let val1 = ctx.context.get("test_key").unwrap().as_str().unwrap();
-    assert_eq!("test_value", val1);
+    let val1 = ctx.context.get("key1").unwrap().as_str().unwrap();
+    assert_eq!("value1", val1);
+    Ok(())
+  }
+
+  #[tokio::test]
+  async fn will_return_error_if_plan_step_is_missing_action() -> Result<()> {
+    let config = get_config(NyaTestConfigs::NyaConfigPlanStepMissingAction)?;
+    let nya = Nya::build("cmd1", vec![config], vec![Box::new(TestService)]);
+    assert_eq!(matches!(nya, Err(PlanStepDoesNotExist{ .. })), true);
     Ok(())
   }
 }

@@ -9,7 +9,7 @@ impl TaskTracker {
     pub async fn add(&self, handle: JoinHandle<()>) {
         self.handles.lock().await.push(handle);
     }
-    pub async fn wait_all(&self) {
+    pub async fn wait_all(&self) { // TODO: thiserror for handling errors in execution
         let mut handles = self.handles.lock().await;
         for handle in handles.drain(..) {
             let _ = handle.await;
