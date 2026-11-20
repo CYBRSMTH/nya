@@ -45,6 +45,7 @@ pub(crate) async fn test_fn2(nya: Nya, _: Payload) {
 
 pub(crate) struct TestService;
 pub(crate) struct EmptyService;
+pub(crate) struct DuplicateService;
 
 impl Service for TestService {
   fn name(&self) -> String {"Test Service".to_string()}
@@ -60,6 +61,16 @@ impl Service for EmptyService {
   fn name(&self) -> String {"Empty Service".to_string()}
   fn actions(&self) -> ServiceActions {
     vec![]
+  }
+}
+
+impl Service for DuplicateService {
+  fn name(&self) -> String {"Duplicate Service".to_string()}
+  fn actions(&self) -> ServiceActions {
+    vec![
+      ("event1".to_string(), handle_action(test_fn)),
+      ("event1".to_string(), handle_action(test_fn2)),
+    ]
   }
 }
 

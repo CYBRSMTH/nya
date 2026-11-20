@@ -43,5 +43,4 @@ pub mod service_tests{
     assert_eq!(value, "value1");
     Ok(())
   }
-
 }

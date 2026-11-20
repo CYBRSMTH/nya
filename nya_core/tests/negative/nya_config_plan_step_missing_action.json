@@ -2,8 +2,7 @@
   "plans": {
     "cmd1": {
       "steps": [
-        "test_event",
-        "test_event2"
+        "test_event"
       ]
     }
   }

@@ -79,4 +79,13 @@ mod context_tests {
     assert!(matches!(nya_context.unwrap_err(), NyaError::ContextInvalidType));
     Ok(())
   }
+
+  #[test]
+  fn context_throws_an_error_when_config_is_mixed_with_invalid_config() -> Result<()> {
+    let config1 = get_config(NyaTestConfigs::NyaConfig)?;
+    let config2 = get_config(NyaTestConfigs::NyaContextInvalid)?;
+    let nya_context = NyaContext::new(vec![config1, config2]);
+    assert!(matches!(nya_context.unwrap_err(), NyaError::ContextInvalidType));
+    Ok(())
+  }
 }

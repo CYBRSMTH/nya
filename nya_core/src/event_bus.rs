@@ -70,7 +70,7 @@ mod event_bus_tests{
   use anyhow::Result;
   use crate::{{event_bus::{EventBus, NyaEventBus}, payload::Payload, service::Service}, runtime::Nya};
   use crate::errors::NyaError;
-  use crate::test_utils::{get_config, EmptyService, NyaTestConfigs, TestService};
+  use crate::test_utils::{get_config, DuplicateService, EmptyService, NyaTestConfigs, TestService};
 
   fn get_test_services() -> Vec<Box<dyn Service>> {
     vec![Box::new(TestService)]
@@ -78,6 +78,7 @@ mod event_bus_tests{
   fn get_empty_service() -> Vec<Box<dyn Service>> {
     vec![Box::new(EmptyService)]
   }
+  fn get_dup_service() -> Vec<Box<dyn Service>> {vec![Box::new(DuplicateService)]}
 
   #[tokio::test]
   async fn can_register_events() -> Result<()> {
@@ -121,6 +122,13 @@ mod event_bus_tests{
   async fn event_bus_returns_error_when_service_is_empty() -> Result<()> {
     let bus_result = NyaEventBus::new(get_empty_service());
     assert!(matches!(bus_result, Err(NyaError::ServiceMissingActions)));
+    Ok(())
+  }
+
+  #[tokio::test]
+  async fn event_bus_returns_error_when_service_has_duplicate_actions() -> Result<()> {
+    let bus_result = NyaEventBus::new(get_dup_service());
+    assert!(matches!(bus_result, Err(NyaError::ServiceActionsDuplicates(_))));
     Ok(())
   }
 }

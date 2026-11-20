@@ -1,7 +1,9 @@
 {
   "plans": {
     "": {
-      "steps": []
+      "steps": [
+        "event1"
+      ]
     }
   }
 }

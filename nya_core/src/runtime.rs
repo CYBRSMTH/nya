@@ -97,6 +97,8 @@ impl Nya {
 mod nya_tests {
   use crate::{payload::Payload, runtime::Nya};
   use anyhow::Result;
+  use crate::errors::NyaError;
+  use crate::errors::NyaError::PlanStepDoesNotExist;
   use crate::test_utils::{get_config, NyaTestConfigs, TestService};
 
   #[test]
@@ -124,12 +126,12 @@ mod nya_tests {
 
 #[tokio::test]
   async fn can_get_value_from_nya() -> Result<()> {
-  let config = get_config(NyaTestConfigs::NyaConfig)?;
-  let nya = Nya::build("cmd1", vec![config], vec![Box::new(TestService)])?;
-  nya.execute(Payload::empty()).await?;
-  let nya_val = &nya.get("key1").await;
-  assert_eq!("value1", nya_val.as_str().unwrap());
-  Ok(())
+    let config = get_config(NyaTestConfigs::NyaConfig)?;
+    let nya = Nya::build("cmd1", vec![config], vec![Box::new(TestService)])?;
+    nya.execute(Payload::empty()).await?;
+    let nya_val = &nya.get("key1").await;
+    assert_eq!("value1", nya_val.as_str().unwrap());
+    Ok(())
   }
 
   #[tokio::test]
@@ -154,6 +156,14 @@ mod nya_tests {
     let ctx = nya.internals.context.lock().await;
     let val1 = ctx.context.get("key1").unwrap().as_str().unwrap();
     assert_eq!("value1", val1);
+    Ok(())
+  }
+
+  #[tokio::test]
+  async fn will_return_error_if_plan_step_is_missing_action() -> Result<()> {
+    let config = get_config(NyaTestConfigs::NyaConfigPlanStepMissingAction)?;
+    let nya = Nya::build("cmd1", vec![config], vec![Box::new(TestService)]);
+    assert_eq!(matches!(nya, Err(PlanStepDoesNotExist{ .. })), true);
     Ok(())
   }
 }
