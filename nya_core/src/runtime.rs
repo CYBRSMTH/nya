@@ -97,7 +97,6 @@ impl Nya {
 mod nya_tests {
   use crate::{payload::Payload, runtime::Nya};
   use anyhow::Result;
-  use crate::errors::NyaError;
   use crate::errors::NyaError::PlanStepDoesNotExist;
   use crate::test_utils::{get_config, NyaTestConfigs, TestService};
 
