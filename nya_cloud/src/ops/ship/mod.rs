@@ -1,5 +1,6 @@
 use std::{env, path::PathBuf, process::Stdio};
 use futures::future::join_all;
+use anyhow::{Context, Result, bail};
 use serde::{Deserialize, Serialize};
 use tokio::{io::{AsyncBufReadExt, BufReader}, process::Command};
 use nya_core::{payload::Payload, runtime::Nya, service::{Service, ServiceActions, handle_action}};
@@ -129,7 +130,10 @@ async fn deploy_capsule(nya: Nya, _: Payload) {
         let nya = nya.clone();
         let deploy_task = tokio::spawn(async move {
             // Push image
-            push_image(&ctx.pack_image_name, nya.clone()).await;
+            if let Err(error) = push_image(&ctx.pack_image_name, nya.clone()).await {
+                nya.log(&format!("Image upload failed: {error:#}")).await;
+                return;
+            }
             
             // Copy values
             copy_values(&ctx, nya.clone()).await;
@@ -143,7 +147,7 @@ async fn deploy_capsule(nya: Nya, _: Payload) {
     join_all(deploy_tasks).await;
 }
 
-async fn push_image(image_name: &str, nya: Nya) {
+async fn push_image(image_name: &str, nya: Nya) -> Result<()> {
     nya.log(&format!("Pushing {}...", image_name)).await;
     
     let mut cmd = Command::new("docker");
@@ -152,7 +156,7 @@ async fn push_image(image_name: &str, nya: Nya) {
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
     
-    run_command(cmd, nya).await;
+    run_command(cmd, nya).await.with_context(|| format!("could not push image {image_name}"))
 }
 
 async fn copy_values(ctx: &PackContext, nya: Nya) {
@@ -172,7 +176,7 @@ async fn copy_values(ctx: &PackContext, nya: Nya) {
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
     
-    run_command(cmd, nya).await;
+    let _ = run_command(cmd, nya).await;
 }
 
 async fn helm_deploy(ctx: &PackContext, nya: Nya) {
@@ -220,17 +224,17 @@ async fn helm_deploy(ctx: &PackContext, nya: Nya) {
     .stdout(Stdio::piped())
     .stderr(Stdio::piped());
     
-    run_command(cmd, nya).await;
+    let _ = run_command(cmd, nya).await;
 }
 
 // Reuse this for all commands
-async fn run_command(mut cmd: Command, nya: Nya) {
+async fn run_command(mut cmd: Command, nya: Nya) -> Result<()> {
     // CRITICAL: Pass through SSH agent socket
     if let Ok(ssh_auth_sock) = env::var("SSH_AUTH_SOCK") {
       cmd.env("SSH_AUTH_SOCK", ssh_auth_sock);
     }
 
-    let mut child = cmd.spawn().unwrap();
+    let mut child = cmd.spawn().context("could not start command")?;
     
     let stdout = child.stdout.take().unwrap();
     let stderr = child.stderr.take().unwrap();
@@ -250,13 +254,90 @@ async fn run_command(mut cmd: Command, nya: Nya) {
     let err_task = tokio::spawn({
         let nya = nya.clone();
         async move {
+            let mut insecure_registry = false;
             while let Ok(Some(line)) = err_reader.next_line().await {
+                insecure_registry |= line.contains("server gave HTTP response to HTTPS client");
                 nya.log(&line).await;
             }
+            insecure_registry
         }
     });
     
-    let _ = child.wait().await;
+    let status = child.wait().await.context("could not wait for command")?;
     let _ = out_task.await;
-    let _ = err_task.await;
+    let insecure_registry = err_task.await?;
+    if !status.success() {
+        if insecure_registry {
+            bail!("command failed with {status}; check Docker's insecure-registry setting for this HTTP registry");
+        }
+        bail!("command failed with {status}");
+    }
+    Ok(())
+}
+#[cfg(all(test, unix))]
+mod tests {
+    use super::*;
+
+    fn test_nya() -> Nya {
+        Nya::build("test", vec![serde_json::json!({"plans": {"test": {"steps": []}}})], vec![], Payload::empty()).unwrap()
+    }
+
+    fn shell(script: &str) -> Command {
+        let mut command = Command::new("sh");
+        command.args(["-c", script]).stdout(Stdio::piped()).stderr(Stdio::piped());
+        command
+    }
+
+    #[tokio::test]
+    async fn successful_command_returns_ok() {
+        run_command(shell("printf uploaded; exit 0"), test_nya()).await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn failed_upload_does_not_continue_to_deployment() {
+        if env::var_os("NYA_SHIP_TEST_WORKER").is_some() {
+            let nya = test_nya();
+            nya.set("pack_contexts", vec![PackContext {
+                pack_name: "test".into(), pack_location: "/unused".into(), pack_image_name: "test-image".into(),
+            }]).await;
+            nya.set("nya.control_plane", serde_json::json!({"host": "unused", "user": "unused", "ssh_private_key_file": "unused"})).await;
+            nya.set("nya.control_plane.vars", serde_json::json!({"domain_name": "unused", "secret_name": "unused"})).await;
+            nya.set("nya.registry_host", "unused").await;
+            deploy_capsule(nya, Payload::empty()).await;
+            return;
+        }
+
+        // Change PATH only in a child test process, never in the parallel test runner.
+        use std::os::unix::fs::PermissionsExt;
+        let dir = env::temp_dir().join(format!("nya-ship-{}-{}", std::process::id(),
+            std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let trace = dir.join("trace");
+        for (program, code) in [("docker", 1), ("scp", 0), ("ssh", 0)] {
+            let path = dir.join(program);
+            std::fs::write(&path, format!("#!/bin/sh\nprintf '%s\\n' '{program}' >> \"$NYA_SHIP_TRACE\"\nexit {code}\n")).unwrap();
+            std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755)).unwrap();
+        }
+        let output = std::process::Command::new(env::current_exe().unwrap())
+            .args(["--exact", "ops::ship::tests::failed_upload_does_not_continue_to_deployment", "--nocapture"])
+            .env("NYA_SHIP_TEST_WORKER", "1").env("NYA_SHIP_TRACE", &trace)
+            .env("PATH", &dir).output().unwrap();
+        let calls = std::fs::read_to_string(&trace).unwrap();
+        std::fs::remove_dir_all(dir).unwrap();
+        assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+        assert_eq!(calls, "docker\n", "copy/deploy must not run after a failed upload");
+    }
+
+    #[tokio::test]
+    async fn http_registry_failure_mentions_insecure_registry_setting() {
+        let error = run_command(shell("echo 'server gave HTTP response to HTTPS client' >&2; exit 1"), test_nya()).await.unwrap_err();
+        assert!(error.to_string().contains("insecure-registry"));
+    }
+
+    #[tokio::test]
+    async fn spawn_failure_is_returned() {
+        let mut command = Command::new("/nonexistent/nya-test-docker");
+        command.stdout(Stdio::piped()).stderr(Stdio::piped());
+        assert!(run_command(command, test_nya()).await.is_err());
+    }
 }
